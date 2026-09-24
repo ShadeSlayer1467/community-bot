@@ -1,0 +1,11 @@
+{
+  "discordToken": "",
+  "applicationId": "",
+  "guildIds": [],
+  "ownerIds": [],
+  "customOwnerId": "",
+  "adminPassword": "",
+  "port": 3210,
+  "openaiApiKey": "",
+  "openaiModel": ""
+}
