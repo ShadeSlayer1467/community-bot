@@ -58,8 +58,8 @@
       }
     }
 
-    context.lineWidth = 0.75;
-    context.strokeStyle = color(0.055);
+    context.lineWidth = 0.85;
+    context.strokeStyle = color(0.075);
     for (let row = 0; row < points.length; row += 1) {
       for (let column = 0; column < points[row].length; column += 1) {
         const point = points[row][column];
@@ -84,13 +84,13 @@
       if (!point) return;
       const radius = 24 + point.seed * 34;
 
-      context.fillStyle = color(0.11 + point.seed * 0.07);
+      context.fillStyle = color(0.15 + point.seed * 0.08);
       context.beginPath();
       context.arc(point.x, point.y, point.seed > 0.78 ? 2.1 : 1.35, 0, tau);
       context.fill();
 
       if (point.seed > 0.44) {
-        context.strokeStyle = color(0.045 + point.seed * 0.035);
+        context.strokeStyle = color(0.065 + point.seed * 0.05);
         context.lineWidth = point.seed > 0.82 ? 1 : 0.65;
         context.beginPath();
         context.arc(
@@ -104,7 +104,7 @@
       }
 
       if (point.seed > 0.68) {
-        context.fillStyle = color(0.16);
+        context.fillStyle = color(0.22);
         context.font = '9px ui-monospace, SFMono-Regular, Consolas, monospace';
         context.fillText(glyphs[index % glyphs.length], point.x + 9, point.y - 8);
       }
