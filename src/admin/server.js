@@ -4,6 +4,8 @@ import path from 'node:path';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { builtinNames } from '../settings.js';
 import QRCode from 'qrcode';
+import { NotificationError } from '../notifications/model.js';
+import { snowflake } from '../config.js';
 const hash = (v) => createHash('sha256').update(String(v)).digest();
 const equal = (a, b) => timingSafeEqual(hash(a), hash(b));
 async function jsonBody(req) {
@@ -20,7 +22,7 @@ async function jsonBody(req) {
     throw new Error('Invalid JSON request.');
   }
 }
-export function createAdmin({ config, settings, host, logger, runner, security }) {
+export function createAdmin({ config, settings, host, logger, runner, security, notifications }) {
   const sessions = new Map();
   let failed = 0;
   let retryAt = 0;
@@ -41,6 +43,7 @@ export function createAdmin({ config, settings, host, logger, runner, security }
     };
     try {
       if (
+        !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) ||
         req.headers.host !== authority ||
         (req.headers.origin && req.headers.origin !== origin) ||
         req.headers['sec-fetch-site'] === 'cross-site'
@@ -48,6 +51,37 @@ export function createAdmin({ config, settings, host, logger, runner, security }
         return send(403, { error: 'Local same-origin requests only.' });
       if (!['GET', 'POST'].includes(req.method)) return send(405, { error: 'Method not allowed.' });
       const url = new URL(req.url, origin);
+      // Dedicated content-only endpoint: never creates an admin or developer session.
+      if (url.pathname === '/api/notifications' && req.method === 'POST') {
+        if (!notifications)
+          return send(503, { error: 'Notification service unavailable.', code: 'unavailable' });
+        if (!notifications.credential.accepts(req.headers.authorization)) {
+          notifications.record('rejected', 'authentication', 'unauthorized');
+          return send(401, { error: 'Invalid notification credential.', code: 'unauthorized' });
+        }
+        try {
+          let payload;
+          try {
+            payload = await jsonBody(req);
+          } catch {
+            throw new NotificationError(
+              'invalid_payload',
+              'Expected a JSON object no larger than 64000 bytes.',
+            );
+          }
+          return send(200, await notifications.submit(payload));
+        } catch (e) {
+          const error = notifications.safeError(e);
+          if (error.code === 'invalid_payload')
+            notifications.record('rejected', 'payload', error.code);
+          if (error.retryAfter) res.setHeader('Retry-After', String(error.retryAfter));
+          return send(error.status, {
+            error: error.message,
+            code: error.code,
+            ...(error.retryAfter ? { retryAfterSeconds: error.retryAfter } : {}),
+          });
+        }
+      }
       if (req.method === 'GET' && ['/', '/app.js', '/style.css'].includes(url.pathname)) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         res.writeHead(200, {
@@ -95,10 +129,40 @@ export function createAdmin({ config, settings, host, logger, runner, security }
           builtinNames,
           logs: logger.recent,
           security: security?.status() ?? { enrolled: false, ownerId: null, elevatedUntil: null },
+          notifications: notifications?.status() ?? null,
         });
       if (req.method === 'POST') {
         const body = await jsonBody(req);
         switch (url.pathname) {
+          case '/api/notifications/category': {
+            if (!notifications?.delivery.agents || !host.client.isReady())
+              throw new Error('Connect the bot first.');
+            if (!snowflake(body.guildId)) throw new Error('Enter a valid notification Guild ID.');
+            const guild = await host.client.guilds.fetch(body.guildId);
+            const categoryId = await notifications.delivery.agents.createCategory(
+              guild,
+              config.ownerIds,
+              host.client.user.id,
+            );
+            logger.log('info', 'Agent notification category created', {
+              guildId: guild.id,
+              categoryId,
+            });
+            return send(200, { categoryId });
+          }
+          case '/api/notifications/settings':
+            if (!notifications) throw new Error('Notification service unavailable.');
+            return send(200, notifications.save(body));
+          case '/api/notifications/credential':
+            if (!notifications) throw new Error('Notification service unavailable.');
+            logger.log('info', 'Notification API credential rotated');
+            return send(200, { token: notifications.credential.rotate() });
+          case '/api/notifications/validate':
+            if (!notifications) throw new Error('Notification service unavailable.');
+            return send(200, await notifications.validateDestination());
+          case '/api/notifications/test':
+            if (!notifications) throw new Error('Notification service unavailable.');
+            return send(200, await notifications.test(body.source));
           case '/api/totp/start': {
             if (!security) throw new Error('Developer authentication is not configured.');
             if (Date.now() < retryAt)

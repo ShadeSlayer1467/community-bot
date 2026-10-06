@@ -1,6 +1,18 @@
 # Verification
 
-Offline validation uses Node.js 24.19.0 (the available bundled runtime). The machine's system Node.js is 18.12.1; install Node.js 24 LTS or use an explicitly selected compatible runtime before launching. Dependency installation produced a lockfile; `npm audit` reported zero vulnerabilities at the time of this run.
+## Notification bridge update
+
+Agent Channels update: automatic per-source creation/reuse, restart recovery, deleted/moved channels, slug collisions, category permissions and limits are covered by targeted tests. Existing DM history is not modified by channel setup.
+
+The complete suite passes with 65 tests, including authenticated loopback HTTP delivery, rejected credentials and destination overrides, admin/TOTP separation, channel and DM delivery, destination switching, permissions and delivery failures, rate limiting, deduplication, bounded queue, expiry, delivery timeout, credential rotation and redaction. Existing CustomCommand/TOTP tests still pass.
+
+The .NET 8 notification example builds with zero warnings/errors. Both the JavaScript and compiled C# clients were exercised against the actual local HTTP endpoint using temporary credentials and stub Discord delivery (`scripts/notification-client-smoke.js`). The Edge browser smoke test covers notification settings persistence, channel/DM switching, credential masking/clearing, destination error display and configured test delivery. No real notification credential was created and no notification was sent to Discord during these tests.
+
+After starting the bot, choose a real destination in Notifications, enable and save, validate, generate the caller credential, and use Send Test Notification. Confirm the embed arrives and that your Discord mobile preferences permit phone notifications. Repeat after switching delivery mode if both modes will be used. See [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+## Original v1 checks
+
+Offline validation uses Node.js 24 LTS. Install Node.js 24 LTS or explicitly select another compatible runtime before launching. Dependency installation produced a lockfile; `npm audit` reported zero vulnerabilities at the time of the recorded run.
 
 `npm run check` passed for v1: 31 JavaScript modules checked and all 39 tests passed, with no skips. The build checks syntax and serializes/validates guild and global DM slash-command definitions; there is no transpilation or generated application bundle. `npm test` uses Node's built-in test runner. The targeted tests cover:
 

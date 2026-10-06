@@ -93,6 +93,39 @@ button {
 button:hover {
   filter: brightness(1.1);
 }
+button:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(1.2);
+}
+#actionToast {
+  position: fixed;
+  z-index: 1000;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(620px, calc(100vw - 32px));
+  padding: 14px 20px;
+  border: 1px solid #81e2ba99;
+  border-radius: 12px;
+  background: #183b30ed;
+  color: #eafff5;
+  box-shadow: 0 8px 32px #0008;
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+#actionToast[data-kind='error'] {
+  background: #4a2222ed;
+  border-color: #ff9c9c;
+}
+#actionToast[data-kind='progress'] {
+  background: #223644ed;
+  border-color: #8fc7ef;
+}
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled) { transform: none; }
+}
 button:disabled {
   opacity: 0.5;
   cursor: wait;

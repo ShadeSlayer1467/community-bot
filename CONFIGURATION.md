@@ -14,7 +14,7 @@ Copy `config.example.json` to `config.local.json` next to package.json. Keep API
 | `openaiApiKey` | Optional: create an API key in your [OpenAI project](https://platform.openai.com/api-keys). Leave blank if you do not use `/ask`. |
 | `openaiModel` | Optional: choose a text model your OpenAI API project can access. No model is silently selected for you. |
 
-The old projects contained hard-coded credentials. Rotate any tokens/API keys/webhooks that are still active before reuse. The recoverable legacy backup can still contain those old credentials and must stay private.
+If a credential is ever exposed in source, logs, screenshots, or chat, rotate it at the provider before continuing.
 
 ## Install the bot in Discord
 
@@ -39,7 +39,13 @@ Saving toggles/access/responses updates runtime checks immediately. Click Sync t
 
 Owner IDs/API keys cannot be edited from this web panel. Edit `config.local.json` locally and restart. Authenticator enrollment/replacement is available locally with admin-password re-entry and confirmation. The encrypted credential is in `data/security/totp.dpapi.json`; elevation exists only in memory. Settings and allowlists are saved to `data/settings.json` with atomic replacement. Windows file access follows your account/directory ACLs; do not share the folder with untrusted users. Do not port-forward or reverse-proxy this panel. It binds only to 127.0.0.1 and uses a password, expiring HttpOnly/SameSite session cookie, CSRF checks, Host/Origin checks and a restrictive content security policy.
 
-## Optional AI
+## Local notifications
+
+**Agent Channels** mode routes by the caller's existing `source` field. Select a guild and create or choose an Agent Notifications category, then save. Channels are created automatically on the first notification from each source and reused afterward. The panel lists the resulting source-to-channel mappings. Bot permissions must include Manage Channels. See NOTIFICATIONS.md for limits and category privacy.
+
+Use **Notifications** in the admin panel to enable delivery and choose **Guild Channel** (Guild ID + Channel ID) or **Direct Message** (User ID, initially your configured owner). Save, validate the destination, and send a test. Changes take effect without restarting. Generate a separate notification credential there and give it only to local caller applications; rotating it invalidates the old value. Settings and the credential verifier are saved under ignored `data/`. The caller provides content only and cannot override the destination or invoke admin/CustomCommand actions. See [NOTIFICATIONS.md](NOTIFICATIONS.md) for the HTTP schema, limits, error codes and C#/JavaScript examples.
+
+## Optional AI configuration
 
 Fill both OpenAI values, restart, enable `/ask` in the panel, Save and Sync. It uses the [Responses API](https://developers.openai.com/api/docs/quickstart), with storage disabled and an output token cap. Only the entered question is sent; the bot does not read conversation history. Requests may incur OpenAI API charges. Use your project spending controls. AI is a text-only feature; it has no link to moderation or custom-code execution.
 

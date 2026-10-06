@@ -1,18 +1,34 @@
 # Community Bot
 
-One Discord bot with a password-protected local control panel and an owner-only, hot-reloaded JavaScript extension point. Node.js 24 LTS is recommended; minimum 22.12.0. Uses discord.js 14.27.0 and Discord API v10.
+[![Node.js 22.12+](https://img.shields.io/badge/Node.js-22.12%2B-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-81e2ba)](LICENSE)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows)](https://www.microsoft.com/windows)
+
+A local-first Discord bot with a polished browser control room, practical community commands, secure owner-only extensions, and a notification bridge for other applications.
+
+The admin panel binds to `127.0.0.1` only. Discord credentials, administrator passwords, authenticator data, runtime state, and notification credentials stay in ignored local files.
+
+## Highlights
+
+- **One control room:** connect, configure commands, manage access, inspect activity, and sync Discord registrations.
+- **Useful built-ins:** utilities, community tools, tasks, moderation, optional AI, and editable response commands.
+- **Secure developer mode:** exact-owner checks, bot-DM-only commands, TOTP, short-lived elevation, and hot-reloaded local JavaScript.
+- **Local notification bridge:** send safe, bounded updates from JavaScript, C#, or another local application to a saved Discord destination.
+- **No database or hosted dashboard:** atomic local JSON storage and a loopback-only web server.
 
 ## Start here
 
-1. Node.js 24 LTS is recommended. The launcher uses a compatible Node.js on PATH or falls back to the bundled Codex runtime on this PC. If neither is available, install Node.js 24 LTS. The old system Node.js 18.12.1 cannot run this project directly.
+1. Install Node.js 24 LTS (minimum supported version: 22.12.0) and clone this repository on Windows.
 2. Copy `config.example.json` to `config.local.json`. Fill in the values using [CONFIGURATION.md](CONFIGURATION.md). All supplied credentials and IDs are blank.
-3. Double-click `start.bat`. It checks Node.js, installs missing dependencies, and keeps startup errors visible. Keep its window open while the bot runs; Ctrl+C stops it. Alternatively, run `npm ci`, `npm run check`, then `npm start` in this folder.
+3. Run `npm ci` and `npm run check`, then double-click `start.bat` or run `npm start`. Keep the process open while the bot runs; Ctrl+C stops it.
 4. Open `http://127.0.0.1:3210`. Sign in with your configured admin password. The bot connects automatically when configured; click **Sync commands to Discord** to register commands. Run `./Enable-Startup.ps1` to enable silent launch at Windows sign-in.
 5. On your phone, use normal slash commands in a configured Discord server. Developer commands require a bot DM and TOTP; enroll through the local panel as described below. The PC and bot process must remain running.
 
 You can use the panel offline with only an admin password filled in. Connect explains which Discord values are missing. Configuration-file changes require restarting the process; panel settings take effect as soon as you save. Sync updates Discord's visible command list.
 
 ## What is included
+
+Local programs can send outbound notifications through `POST /api/notifications` using a separate local credential. Set the destination (server/channel or your DMs), limits and credential in the panel's **Notifications** section. See [NOTIFICATIONS.md](NOTIFICATIONS.md) for setup and reusable JavaScript/C# callers. CustomCommand authentication remains separate.
 
 | Area | Commands / behavior |
 | --- | --- |
@@ -55,4 +71,17 @@ The caller must be a configured owner or allowed moderator and hold the appropri
 
 Purge examines at most `scan` messages (default 1,000; maximum 10,000), deletes at most `count` (maximum 1,000), and works only in the current channel. It skips pinned messages and messages older than two weeks, with a one-minute safety margin. It batches 2–100 IDs and handles a single message separately. It does not claim to delete every message a user ever sent. Custom code can implement longer, explicitly scoped maintenance using individual delete requests, but must respect permissions, rate limits and timeout boundaries. Discord.js handles REST rate-limit queues; this bot does not run its own immediate retry loop.
 
-See [REVIEW.md](REVIEW.md) for the original-project review and [VERIFICATION.md](VERIFICATION.md) for offline results and the live-test checklist.
+## Documentation
+
+| Guide | Purpose |
+| --- | --- |
+| [Configuration](CONFIGURATION.md) | Discord Developer Portal, local settings, permissions, startup, and optional AI |
+| [CustomCommand](CUSTOM_COMMAND.md) | TOTP enrollment, trusted local extensions, host API, and examples |
+| [Notifications](NOTIFICATIONS.md) | Destination setup, HTTP contract, limits, errors, and caller examples |
+| [Integration handoff](USE_GUIDE.md) | A copyable guide for adding Community Bot notifications to another project |
+| [Verification](VERIFICATION.md) | Automated coverage, browser checks, and a live Discord checklist |
+| [Security](SECURITY.md) | Supported versions, secret handling, and vulnerability reporting |
+
+## License
+
+Released under [The Unlicense](LICENSE): use, copy, modify, and share it freely. Attribution is not required.

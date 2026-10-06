@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { redactNotificationTokens } from './notifications/credential.js';
 export function createLogger(directory, secrets = [], sanitize = (value) => value) {
   fs.mkdirSync(directory, { recursive: true });
   const recent = [];
   const redact = (value) => {
-    let text = sanitize(String(value));
+    let text = sanitize(redactNotificationTokens(value));
     for (const secret of secrets.filter(Boolean)) text = text.split(secret).join('[redacted]');
     return text
       .replace(/[A-Za-z0-9_-]{23,}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{25,}/g, '[redacted]')

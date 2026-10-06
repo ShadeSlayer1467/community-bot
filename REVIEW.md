@@ -2,9 +2,7 @@
 
 ## Starting state
 
-The workspace had five legacy project groups and no root Git repository. There were no completed unified-bot changes from the interrupted attempt. Nested repositories had existing modified files (including a JavaScript main file, configuration/data files and C# commands). Those changes and their Git histories were preserved.
-
-The old project groups were moved to `D:\All Code\discord-bot-legacy-20260921` outside the active workspace. File counts were verified after the move: 3,274; 3,329; 405; 2,882; and 1,973 respectively. An additional `empty-original-directories` folder holds empty directory shells from the move. No old source or history was irreversibly deleted. This backup intentionally retains historical names and credentials and should remain private; it is not part of the new bot.
+The project consolidates useful ideas from several earlier experiments into one maintained Discord bot. Legacy source and its deployment-specific configuration were intentionally kept outside this repository; no historical credentials or private runtime data are part of Community Bot.
 
 ## Feature decisions
 

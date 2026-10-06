@@ -9,6 +9,11 @@ import { createAdmin } from './admin/server.js';
 import { WindowsVault } from './security/windows-vault.js';
 import { DeveloperAccess } from './security/developer-access.js';
 import { connectOnStartup } from './startup.js';
+import { NotificationCredential } from './notifications/credential.js';
+import { notificationDefaults, validateNotificationSettings } from './notifications/model.js';
+import { NotificationDelivery } from './notifications/delivery.js';
+import { NotificationService } from './notifications/service.js';
+import { AgentChannels } from './notifications/agent-channels.js';
 async function main() {
   const config = loadConfig();
   if (!config.adminPassword)
@@ -30,7 +35,22 @@ async function main() {
   const runner = new CustomRunner(logger.log, security);
   security.onRevoke = () => runner.cancel?.();
   const host = new DiscordHost({ config, settings, tasks, feedback, logger, runner, security });
-  const server = createAdmin({ config, settings, host, logger, runner, security });
+  const notifications = new NotificationService({
+    settings: new Store(
+      path.join(root, 'data', 'notifications.json'),
+      notificationDefaults(config),
+      validateNotificationSettings,
+    ),
+    credential: new NotificationCredential(
+      new Store(path.join(root, 'data', 'security', 'notification-credential.json'), {}),
+    ),
+    delivery: new NotificationDelivery(
+      host,
+      new AgentChannels(new Store(path.join(root, 'data', 'notification-agent-channels.json'), [])),
+    ),
+    logger,
+  });
+  const server = createAdmin({ config, settings, host, logger, runner, security, notifications });
   server.on('error', (e) => {
     logger.log(
       'error',
@@ -47,6 +67,7 @@ async function main() {
   });
   const stop = async () => {
     cancelStartup();
+    notifications.close();
     security.revoke();
     runner.cancel?.();
     try {

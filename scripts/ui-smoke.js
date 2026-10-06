@@ -13,6 +13,10 @@ import { CustomRunner } from '../src/custom/runner.js';
 import { DeveloperAccess } from '../src/security/developer-access.js';
 import { WindowsVault } from '../src/security/windows-vault.js';
 import { generate } from 'otplib';
+import { NotificationCredential } from '../src/notifications/credential.js';
+import { notificationDefaults, validateNotificationSettings } from '../src/notifications/model.js';
+import { NotificationDelivery } from '../src/notifications/delivery.js';
+import { NotificationService } from '../src/notifications/service.js';
 const require = createRequire(import.meta.url);
 if (!process.env.PLAYWRIGHT_MODULE)
   throw new Error('Set PLAYWRIGHT_MODULE to your installed playwright package.');
@@ -46,7 +50,19 @@ const host = new DiscordHost({
   runner,
   security,
 });
-const server = createAdmin({ config, settings, host, logger, runner, security });
+const notifications = new NotificationService({
+  settings: new Store(
+    path.join(directory, 'notifications.json'),
+    notificationDefaults(config),
+    validateNotificationSettings,
+  ),
+  credential: new NotificationCredential(
+    new Store(path.join(directory, 'notification-credential.json'), {}),
+  ),
+  delivery: new NotificationDelivery(host),
+  logger,
+});
+const server = createAdmin({ config, settings, host, logger, runner, security, notifications });
 let browser;
 try {
   server.listen(0, '127.0.0.1');
@@ -93,6 +109,62 @@ try {
   );
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Fill in discordToken' }).waitFor();
+  await page.locator('#notifyMode').selectOption('dm');
+  await page.locator('#notifyDmFields').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#notifyUser').inputValue(), config.customOwnerId);
+  await page.locator('#notifyEnabled').check();
+  await page.getByRole('button', { name: 'Save notification settings', exact: true }).click();
+  await page.locator('#notice').filter({ hasText: 'Notification settings saved' }).waitFor();
+  assert.equal(await page.locator('#actionToast').isVisible(), true);
+  assert.match(await page.locator('#actionToast').textContent(), /Notification settings saved/);
+  const toastBox = await page.locator('#actionToast').boundingBox();
+  assert.ok(toastBox.y >= 0 && toastBox.y + toastBox.height <= 1100);
+  await page.getByRole('button', { name: 'Validate destination', exact: true }).click();
+  await page.locator('#notice').filter({ hasText: 'Discord is disconnected' }).waitFor();
+  assert.equal(await page.locator('#actionToast').getAttribute('data-kind'), 'error');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#notifyRotate').click();
+  await page.locator('#notifySecretBox').waitFor({ state: 'visible' });
+  const notificationToken = await page.locator('#notifySecret').inputValue();
+  assert.ok(notifications.credential.accepts('Bearer ' + notificationToken));
+  assert.equal(await page.locator('#notifySecret').getAttribute('type'), 'password');
+  assert.ok(!(await page.locator('#notifyHistory').textContent()).includes(notificationToken));
+  await page.locator('#notifyClear').click();
+  assert.equal(await page.locator('#notifySecret').inputValue(), '');
+  const deliveries = [];
+  notifications.delivery = {
+    resolve: async (s) => ({
+      label: s.mode === 'dm' ? 'Test DM' : 'Test Server / #notifications',
+      mode: s.mode,
+    }),
+    send: async (s) => {
+      deliveries.push(s);
+      return s.mode === 'dm' ? 'Test DM' : 'Test Server / #notifications';
+    },
+  };
+  await page.locator('#notifyTest').click();
+  await page.locator('#notice').filter({ hasText: 'Test notification: delivered' }).waitFor();
+  assert.equal(deliveries.at(-1).mode, 'dm');
+  await page.locator('#notifyMode').selectOption('guild');
+  await page.locator('#notifyGuild').fill('100000000000000002');
+  await page.locator('#notifyChannel').fill('100000000000000003');
+  await page.getByRole('button', { name: 'Save notification settings', exact: true }).click();
+  await page.locator('#notice').filter({ hasText: 'Notification settings saved' }).waitFor();
+  await page.locator('#notifyTest').click();
+  await page.locator('#notice').filter({ hasText: 'Test notification: delivered' }).waitFor();
+  assert.equal(deliveries.at(-1).mode, 'guild');
+  await page.locator('#notifyMode').selectOption('agents');
+  await page.locator('#notifyAgentFields').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#notifyChannelField').isVisible(), false);
+  await page.locator('#notifyCategory').fill('100000000000000004');
+  await page.getByRole('button', { name: 'Save notification settings', exact: true }).click();
+  await page.locator('#notice').filter({ hasText: 'Notification settings saved' }).waitFor();
+  assert.equal(notifications.settings.read().mode, 'agents');
+  assert.equal(notifications.settings.read().categoryId, '100000000000000004');
+  assert.equal(
+    new Store(notifications.settings.file, {}, validateNotificationSettings).read().channelId,
+    '100000000000000003',
+  );
   const dataDir = path.resolve('data');
   fs.mkdirSync(dataDir, { recursive: true });
   await page.screenshot({ path: path.join(dataDir, 'admin-preview.png'), fullPage: true });
@@ -106,9 +178,10 @@ try {
   await page.locator('#login').waitFor({ state: 'visible' });
   assert.deepEqual(errors, []);
   console.log(
-    'Browser smoke passed: local QR enrollment/confirmation, encrypted storage, secret removal from DOM, revocation, login, command editing, responsive layout and logout; no page errors.',
+    'Browser smoke passed: notifications credential masking/clearing, persistence, validation error, DM/channel switch and test delivery; plus authenticator enrollment, command editing, responsive layout and logout. No page errors; no live Discord sends.',
   );
 } finally {
+  notifications.close();
   await browser?.close();
   await host.disconnect();
   server.closeAllConnections();

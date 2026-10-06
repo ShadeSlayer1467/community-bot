@@ -7,3 +7,5 @@ custom/CustomCommand.local.mjs
 .env
 .env.*
 !.env.example
+examples/**/bin/
+examples/**/obj/

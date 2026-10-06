@@ -17,7 +17,7 @@ function check(directory) {
     }
   }
 }
-for (const folder of ['src', 'custom', 'scripts', 'test'])
+for (const folder of ['src', 'custom', 'scripts', 'test', 'examples/notifications'])
   if (fs.existsSync(path.join(root, folder))) check(path.join(root, folder));
 const { definitions, developerDefinitions } = await import('../src/commands/definitions.js');
 const { defaults } = await import('../src/settings.js');
