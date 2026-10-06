@@ -19,7 +19,7 @@ The admin panel binds to `127.0.0.1` only. Discord credentials, administrator pa
 ## Start here
 
 1. Install Node.js 24 LTS (minimum supported version: 22.12.0) and clone this repository on Windows.
-2. Copy `config.example.json` to `config.local.json`. Fill in the values using [CONFIGURATION.md](CONFIGURATION.md). All supplied credentials and IDs are blank.
+2. Copy `config.example.json` to `config.local.json`. Fill in the values using the [configuration guide](docs/CONFIGURATION.md). All supplied credentials and IDs are blank.
 3. Run `npm ci` and `npm run check`, then double-click `start.bat` or run `npm start`. Keep the process open while the bot runs; Ctrl+C stops it.
 4. Open `http://127.0.0.1:3210`. Sign in with your configured admin password. The bot connects automatically when configured; click **Sync commands to Discord** to register commands. Run `./Enable-Startup.ps1` to enable silent launch at Windows sign-in.
 5. On your phone, use normal slash commands in a configured Discord server. Developer commands require a bot DM and TOTP; enroll through the local panel as described below. The PC and bot process must remain running.
@@ -28,7 +28,7 @@ You can use the panel offline with only an admin password filled in. Connect exp
 
 ## What is included
 
-Local programs can send outbound notifications through `POST /api/notifications` using a separate local credential. Set the destination (server/channel or your DMs), limits and credential in the panel's **Notifications** section. See [NOTIFICATIONS.md](NOTIFICATIONS.md) for setup and reusable JavaScript/C# callers. CustomCommand authentication remains separate.
+Local programs can send outbound notifications through `POST /api/notifications` using a separate local credential. Set the destination (server/channel or your DMs), limits and credential in the panel's **Notifications** section. See the [notifications guide](docs/NOTIFICATIONS.md) for setup and reusable JavaScript/C# callers. CustomCommand authentication remains separate.
 
 | Area | Commands / behavior |
 | --- | --- |
@@ -61,7 +61,7 @@ The panel shows connection state, server details, currently configured commands,
 
 ## CustomCommand
 
-Set the exact `customOwnerId` in your local config, also list it in `ownerIds`, and restart. Enroll Google Authenticator using the local panel's QR code, Connect and Sync. Copy `custom/CustomCommand.example.mjs` to `custom/CustomCommand.local.mjs`, edit locally, save, then use `/owner-auth` and `/customcommand` **in a direct message with the bot**. No restart or command registration is needed when editing the JavaScript file. See [CUSTOM_COMMAND.md](CUSTOM_COMMAND.md) for enrollment, five-minute sessions, target server/channel options and examples.
+Set the exact `customOwnerId` in your local config, also list it in `ownerIds`, and restart. Enroll Google Authenticator using the local panel's QR code, Connect and Sync. Copy `custom/CustomCommand.example.mjs` to `custom/CustomCommand.local.mjs`, edit locally, save, then use `/owner-auth` and `/customcommand` **in a direct message with the bot**. No restart or command registration is needed when editing the JavaScript file. See the [CustomCommand guide](docs/CUSTOM_COMMAND.md) for enrollment, five-minute sessions, target server/channel options and examples.
 
 Only the exact developer owner with an active TOTP session in a bot DM can run it. Guilds, threads, groups and Administrator bypasses are denied. The secret is encrypted using Windows DPAPI and excluded from Git; elevated sessions disappear on restart. The worker isolates execution lifetime and most JavaScript failures; it is **not an OS security sandbox**. Locally written code runs with the host user's privileges. No endpoint accepts uploaded code or shell commands.
 
@@ -75,11 +75,12 @@ Purge examines at most `scan` messages (default 1,000; maximum 10,000), deletes 
 
 | Guide | Purpose |
 | --- | --- |
-| [Configuration](CONFIGURATION.md) | Discord Developer Portal, local settings, permissions, startup, and optional AI |
-| [CustomCommand](CUSTOM_COMMAND.md) | TOTP enrollment, trusted local extensions, host API, and examples |
-| [Notifications](NOTIFICATIONS.md) | Destination setup, HTTP contract, limits, errors, and caller examples |
-| [Integration handoff](USE_GUIDE.md) | A copyable guide for adding Community Bot notifications to another project |
-| [Verification](VERIFICATION.md) | Automated coverage, browser checks, and a live Discord checklist |
+| [Documentation index](docs/README.md) | All setup, extension, notification, verification, and project-history guides |
+| [Configuration](docs/CONFIGURATION.md) | Discord Developer Portal, local settings, permissions, startup, and optional AI |
+| [CustomCommand](docs/CUSTOM_COMMAND.md) | TOTP enrollment, trusted local extensions, host API, and examples |
+| [Notifications](docs/NOTIFICATIONS.md) | Destination setup, HTTP contract, limits, errors, and caller examples |
+| [Integration handoff](docs/INTEGRATING_NOTIFICATIONS.md) | A copyable guide for adding Community Bot notifications to another project |
+| [Verification](docs/VERIFICATION.md) | Automated coverage, browser checks, and a live Discord checklist |
 | [Security](SECURITY.md) | Supported versions, secret handling, and vulnerability reporting |
 
 ## License

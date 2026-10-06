@@ -130,7 +130,7 @@ Copy the relevant helper from this repository into the calling project and adapt
 
 Reusable helper:
 
-[`examples/notifications/csharp/CommunityNotifier.cs`](examples/notifications/csharp/CommunityNotifier.cs)
+[`examples/notifications/csharp/CommunityNotifier.cs`](../examples/notifications/csharp/CommunityNotifier.cs)
 
 The helper contains `Notification`, `NotificationResult`, `NotificationException` and `CommunityNotifier`; it needs only .NET libraries. Reuse a client instance and dispose it at application shutdown. It supports cancellation and handles camelCase JSON correctly.
 
@@ -175,7 +175,7 @@ For .NET versions older than 8, adapt the types/language syntax and HTTP calls t
 
 Reusable helper:
 
-[`examples/notifications/notify.mjs`](examples/notifications/notify.mjs)
+[`examples/notifications/notify.mjs`](../examples/notifications/notify.mjs)
 
 ```js
 import { sendNotification } from './notify.mjs';

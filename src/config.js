@@ -33,7 +33,7 @@ export function validateConfig(c) {
 export function loadConfig(file = path.join(root, 'config.local.json')) {
   if (!fs.existsSync(file))
     throw new Error(
-      'Copy config.example.json to config.local.json and fill in the values described in CONFIGURATION.md.',
+      'Copy config.example.json to config.local.json and fill in the values described in docs/CONFIGURATION.md.',
     );
   try {
     return validateConfig(JSON.parse(fs.readFileSync(file, 'utf8')));

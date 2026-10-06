@@ -21,7 +21,7 @@ $env:PATH = (Split-Path -Parent $botNode) + ';' + $env:PATH
 $botConfig = Join-Path $PSScriptRoot 'config.local.json'
 if (-not (Test-Path -LiteralPath $botConfig)) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'config.example.json') -Destination $botConfig
-    throw 'Created config.local.json with blank values. Set adminPassword (at least 16 characters); see CONFIGURATION.md, then run start.bat again.'
+    throw 'Created config.local.json with blank values. Set adminPassword (at least 16 characters); see docs/CONFIGURATION.md, then run start.bat again.'
 }
 if ((-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'node_modules\discord.js'))) -or
     (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'node_modules\otplib'))) -or
