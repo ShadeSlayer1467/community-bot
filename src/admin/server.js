@@ -82,7 +82,10 @@ export function createAdmin({ config, settings, host, logger, runner, security, 
           });
         }
       }
-      if (req.method === 'GET' && ['/', '/app.js', '/style.css'].includes(url.pathname)) {
+      if (
+        req.method === 'GET' &&
+        ['/', '/app.js', '/backdrop.js', '/style.css'].includes(url.pathname)
+      ) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         res.writeHead(200, {
           'Content-Type': file.endsWith('.js')
