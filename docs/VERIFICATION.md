@@ -2,9 +2,11 @@
 
 ## Workout and modular admin update
 
-Final offline run: `npm run check` passed with **69 JavaScript modules checked and all 112 tests passing**, no skips or failures. The expanded headless Edge smoke passed with no page errors, including every Workout subpage at 390px width. JavaScript and compiled C# notification-client smoke tests also passed against the local HTTP endpoint with stub delivery. `git diff --check` passed. Verification used the bundled Node 24 runtime because the default terminal runtime is Node 18.
+Final offline run: `npm run check` passed with **70 JavaScript modules checked and all 116 tests passing**, no skips or failures. The expanded headless Edge smoke passed with no page errors, including every Workout subpage at 390px width. JavaScript and compiled C# notification-client smoke tests also passed against the local HTTP endpoint with stub delivery. `git diff --check` passed. Verification used the bundled Node 24 runtime because the default terminal runtime is Node 18.
 
 Live command registration was inspected after publishing the revised definitions: no duplicate server-visible command names, one server-visible Workout command, no `/today` options, and only `free` on `/start`. The bot was restarted and its log confirmed Discord connected. No live workout messages or workout data were changed during this check.
+
+Compact logger coverage includes note-source filtering without stored-data changes, full secondary note access, preserved short per-side and long safety instructions, contextual controls, More Actions modal/terminal routing, confirmation/stale protections, free Add Exercise visibility, all-exercise summary pagination, short statuses, original progression reasons and Discord size limits.
 
 Discord start/builder coverage includes direct named A/B choice, a labeled next recommendation, no preview/preference/session mutation, explicit planned/free confirmation, resume-only active handling, new program creation and template append through the existing service, exercise search, ordering/prescription editing, validation failures, duplicate saves/starts, expired or reused confirmations, stale program/library revisions, foreign-user/channel rejection and preserved histories/prescriptions. Automatic rotation is deferred.
 

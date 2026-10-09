@@ -188,7 +188,8 @@ test('Discord start/resume uses one durable DM, recovered session buttons log re
   const payload = sessionMessage(s);
   const labels = payload.components.flatMap((r) => r.toJSON().components.map((c) => c.label));
   assert.ok(!labels.some((l) => /dismiss|close/i.test(l)));
-  assert.ok(labels.includes('Finish Workout'));
+  assert.ok(!labels.includes('Finish Workout'));
+  assert.ok(payload.components.flatMap(r=>r.toJSON().components).find(c=>c.type===3).options.some(o=>o.label==='Finish Workout'));
   assert.ok(payload.components.length <= 5);
   for (const r of payload.components)
     for (const c of r.toJSON().components) assert.ok(c.custom_id.length <= 100);
@@ -1065,4 +1066,67 @@ test('used Start confirmations cannot create new sessions after completion/aband
  const free=startSlash(true);await h.handle(free);const freeStart=historyAction(free.result.reply,'Start Free Workout',{channel:{type:1,send:async()=>({id:'free-message'})}});await h.handle(freeStart);
  const freeSession=f.workout.active(user);freeSession.state='completed';freeSession.finishedAt=freeSession.startedAt;f.workout.repo.commit([{key:'session:'+freeSession.id,value:freeSession}]);
  const freeReuse=historyAction(free.result.reply,'Start Free Workout');await h.handle(freeReuse);assert.match(freeReuse.result.reply.content,/already used/);assert.equal(f.workout.repo.sessions().length,2);
+});
+
+const moreAction=(s,value)=>interaction({isStringSelectMenu:()=>true,customId:cid(s,'more'),message:{id:'message'},values:[value]});
+test('compact active logger hides boilerplate/schedule/redundant performance, preserves per-side/safety instructions and raw notes in paginated details',async t=>{
+ const f=fixture(t);let s=f.workout.start(user,{programId:f.program.id});
+ const originalNotes='Starter library exercise. Configure resistance and program prescriptions for your workout. Machine settings belong in a separate variation.';
+ s.exercises[0].notes=originalNotes;
+ s.exercises[0].planned.note='Alternate three days/week. Week 1: Mon A, Wed B, Fri A. Week 2: Mon B, Wed A, Fri B; repeat. Recent performance: 20 / 15 / 15. Count reps per side. Requires a secure bar, rack, rings, or other structurally safe setup. Do not use unstable furniture as a substitute.';
+ s.exercises[0].note='My detailed notes: '+('Keep this user-authored content intact; '.repeat(10));
+ f.workout.repo.commit([{key:'session:'+s.id,value:s}]);f.workout.bindMessage(user,s.id,{channelId:'dm',messageId:'message'});s=f.workout.active(user);
+ const before=JSON.stringify(s),embed=sessionMessage(s).embeds[0].toJSON();const text=JSON.stringify(embed);
+ assert.doesNotMatch(text,/Starter library|Alternate three|Week 1|Recent performance|My detailed notes/);
+ assert.match(text,/Count reps per side/);assert.match(text,/Requires a secure bar/);assert.match(text,/Do not use unstable furniture/);
+ assert.equal(embed.fields.filter(f=>f.name==='Notes').length,0);assert.equal(JSON.stringify(f.workout.active(user)),before);
+ const h=createWorkoutHandler(f),details=moreAction(s,'view-details');await h.handle(details);let payload=details.result.update;let full='';
+ for(let page=0;page<10;page++) {
+   full+=(payload.embeds[0].toJSON().fields||[]).map(f=>f.value).join('');
+   const more=payload.components[0].toJSON().components.find(c=>c.label==='More details');if(!more)break;
+   const next=interaction({isButton:()=>true,customId:more.custom_id,message:{id:'message'}});await h.handle(next);payload=next.result.update;
+ }
+ assert.match(full,/Starter library exercise/);assert.match(full,/Week 1/);assert.match(full,/Recent performance: 20/);assert.match(full,/My detailed notes/);
+ assert.equal(JSON.stringify(f.workout.active(user)),before);
+});
+test('active controls are contextual and More Actions routes modal, edit and finish actions through existing protections',async t=>{
+ const f=fixture(t),h=createWorkoutHandler(f);let s=f.workout.start(user,{programId:f.program.id});f.workout.bindMessage(user,s.id,{channelId:'dm',messageId:'message'});s=f.workout.active(user);
+ let controls=sessionMessage(s).components.flatMap(r=>r.toJSON().components);
+ assert.deepEqual(controls.filter(c=>c.type===2).map(c=>c.label),['Log Set']);assert.ok(controls.every(c=>!c.disabled));
+ const more=controls.find(c=>c.type===3);assert.ok(!more.options.some(o=>/Edit Last|Edit Earlier|Delete Set/.test(o.label)));
+ const weight=moreAction(s,'weight');await h.handle(weight);assert.equal(weight.result.modal.title,'Change working resistance');
+ const note=moreAction(s,'note');await h.handle(note);assert.equal(note.result.modal.title,'Exercise notes / uncertainty');
+ const details=moreAction(s,'details');await h.handle(details);assert.equal(details.result.modal.title,'Log a detailed set');
+ const bad=moreAction(s,'edit');await h.handle(bad);assert.match(bad.result.reply.content,/unavailable/);
+ s=f.workout.mutate(user,s.id,{action:'log',reps:8,expectedRevision:s.revision,requestId:randomUUID()});
+ controls=sessionMessage(s).components.flatMap(r=>r.toJSON().components);assert.ok(controls.some(c=>c.label==='Repeat Last'));
+ const edit=moreAction(s,'edit');await h.handle(edit);assert.ok(edit.result.modal);
+ const finish=moreAction(s,'finish');await h.handle(finish);assert.equal(f.workout.active(user).state,'active');assert.ok(finish.result.update.components[0].toJSON().components.some(c=>c.label==='Confirm Finish Workout'));
+ const stale=moreAction({...s,revision:s.revision-1},'weight');await h.handle(stale);assert.match(stale.result.reply.content,/changed/);
+ const free=structuredClone(s);free.mode='free';free.exercises=[];free.currentIndex=0;
+ const freeControls=sessionMessage(free).components.flatMap(r=>r.toJSON().components);assert.deepEqual(freeControls.filter(c=>c.type===2).map(c=>c.label),['Add Exercise']);assert.ok(!freeControls.some(c=>c.disabled));
+});
+test('completion summary pages all exercises with short statuses, while progression review preserves the full reason',async t=>{
+ const f=fixture(t);let s=f.workout.start(user,{programId:f.program.id});
+ const first=s.exercises[0];s.exercises=Array.from({length:12},(_,index)=>({...structuredClone(first),id:randomUUID(),name:'Exercise '+(index+1),sets:[{id:randomUUID(),order:1,reps:12,resistance:p.resistance,type:'normal',questionable:false,note:'',rpe:null,rir:null}]}));
+ s.state='completed';s.finishedAt=s.startedAt;s.recommendations=s.exercises.map(e=>({id:e.id,exerciseId:e.exerciseId,outcome:'MAINTAIN',reason:'Build toward 3 × 12. A late fatigue drop alone does not require reducing difficulty.',proposed:null}));
+ f.workout.repo.commit([{key:'session:'+s.id,value:s}]);f.workout.bindMessage(user,s.id,{channelId:'dm',messageId:'message'});s=f.workout.repo.getSession(s.id);
+ const h=createWorkoutHandler(f);let payload=sessionMessage(s);const names=[];
+ for(let page=0;page<10;page++) {
+   const embed=payload.embeds[0].toJSON();let size=(embed.title?.length||0)+(embed.description?.length||0)+(embed.footer?.text.length||0);
+   for(const field of embed.fields){names.push(field.name);assert.match(field.value,/MAINTAIN — Build toward 3 × 12/);assert.doesNotMatch(field.value,/late fatigue/);assert.ok(field.value.length<=1024);size+=field.name.length+field.value.length;}assert.ok(size<=6000);
+   const next=payload.components.flatMap(r=>r.toJSON().components).find(c=>c.label==='Next exercises');if(!next)break;
+   const click=interaction({isButton:()=>true,customId:next.custom_id,message:{id:'message'}});await h.handle(click);payload=click.result.update;
+ }
+ assert.deepEqual(names,s.exercises.map(e=>e.name));
+ const review=interaction({isStringSelectMenu:()=>true,customId:cid(s,'recommend'),message:{id:'message'},values:[s.exercises[0].id]});await h.handle(review);assert.match(review.result.update.content,/late fatigue/);
+ assert.deepEqual(f.workout.repo.getSession(s.id),s);
+});
+test('long safety instructions remain complete in the primary logger and action rows stay within Discord limits',async t=>{
+ const f=fixture(t);const s=f.workout.start(user,{programId:f.program.id});
+ const safety='Safety: use a secure setup; '+('check the support and surroundings carefully; '.repeat(18));s.exercises[0].notes=safety;
+ const payload=sessionMessage(s),embed=payload.embeds[0].toJSON();const instruction=embed.fields.filter(f=>f.name.startsWith('Instruction')).map(f=>f.value).join('');assert.equal(instruction,safety.trim());
+ const size=(embed.title?.length||0)+(embed.description?.length||0)+(embed.footer?.text.length||0)+embed.fields.reduce((n,f)=>n+f.name.length+f.value.length,0);assert.ok(size<=6000);
+ assert.ok(payload.components.length<=5);for(const r of payload.components)assert.ok(r.toJSON().components.length<=5);
+ const normal=JSON.stringify(sessionMessage(s));assert.doesNotMatch(normal,/"label":"(?:Dismiss|Close)"/);
 });

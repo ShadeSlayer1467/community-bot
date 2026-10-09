@@ -17,6 +17,8 @@ import { formatResistance, parseResistance } from './model.js';
 import { filterExercises } from './starter.js';
 import { exerciseHistoryPages } from './history.js';
 import { createWorkoutBuilder } from './discord-builder.js';
+import { sessionMessage, sessionDetails, moreActions } from './discord-presentation.js';
+export { sessionMessage } from './discord-presentation.js';
 const row = (...buttons) => new ActionRowBuilder().addComponents(buttons);
 const button = (label, id, style = ButtonStyle.Secondary, disabled = false) =>
   new ButtonBuilder().setLabel(label).setCustomId(id).setStyle(style).setDisabled(disabled);
@@ -56,123 +58,6 @@ function workSets(e) {
       )
       .join('\n') || 'No sets yet.'
   );
-}
-export function sessionMessage(s) {
-  const embeds = [];
-  const components = [];
-  if (s.state === 'active') {
-    const e = s.exercises[s.currentIndex];
-    const embed = new EmbedBuilder()
-      .setColor(0x81e2ba)
-      .setTitle(safe(s.name, 200))
-      .setDescription(
-        `Exercise ${e ? s.currentIndex + 1 : 0}/${s.exercises.length} · ${s.mode === 'free' ? 'Free workout' : 'Planned workout'}`,
-      );
-    if (e) {
-      const p = e.planned;
-      embed.addFields(
-        {
-          name: safe(e.name, 200),
-          value: safe(
-            `${e.variation ? e.variation + '\n' : ''}${p ? `Target: ${p.sets} × ${p.minReps}–${p.maxReps}\nPlanned: ${formatResistance(p.resistance)}` : 'Unplanned exercise'}\nWorking: ${formatResistance(e.workingResistance)}${e.skipped ? '\nSkipped' : ''}${e.questionable ? '\nQuestionable data' : ''}`,
-            1000,
-          ),
-        },
-        {
-          name: 'Previous workout',
-          value: safe(
-            e.previous
-              ? `${e.previous.date.slice(0, 10)}${e.previous.questionable ? ' ?' : ''}\n${e.previous.exercises.map(workSets).join('\n')}`
-              : 'No previous completed performance.',
-            1000,
-          ),
-        },
-        { name: 'Today', value: safe(workSets(e), 1000) },
-      );
-      if (e.notes || e.note || p?.note)
-        embed.addFields({
-          name: 'Notes',
-          value: safe([e.notes, p?.note, e.note].filter(Boolean).join('\n')),
-        });
-    } else embed.addFields({ name: 'Start logging', value: 'Add an exercise from your library.' });
-    embeds.push(embed);
-    components.push(
-      row(
-        button('Log Set', custom(s, 'log'), ButtonStyle.Primary, !e),
-        button('Repeat Last', custom(s, 'repeat'), ButtonStyle.Secondary, !e?.sets.length),
-        button('Change Weight', custom(s, 'weight'), ButtonStyle.Secondary, !e),
-        button('Edit Last Set', custom(s, 'edit'), ButtonStyle.Secondary, !e?.sets.length),
-      ),
-    );
-    components.push(
-      row(
-        button('Previous Exercise', custom(s, 'prev'), ButtonStyle.Secondary, s.currentIndex <= 0),
-        button(
-          'Next Exercise',
-          custom(s, 'next'),
-          ButtonStyle.Secondary,
-          s.currentIndex >= s.exercises.length - 1,
-        ),
-        button('Add Exercise', custom(s, 'add')),
-      ),
-    );
-    components.push(
-      row(
-        button('Edit Earlier Set', custom(s, 'earlier'), ButtonStyle.Secondary, !e?.sets.length),
-        button('Delete Set', custom(s, 'delete'), ButtonStyle.Secondary, !e?.sets.length),
-        button('Skip Exercise', custom(s, 'skip'), ButtonStyle.Secondary, !e),
-        button('Notes / Uncertain', custom(s, 'note'), ButtonStyle.Secondary, !e),
-      ),
-    );
-    components.push(
-      row(
-        button('Log Details', custom(s, 'details'), ButtonStyle.Secondary, !e),
-        button('Finish Workout', custom(s, 'finish')),
-        button('Abandon Workout', custom(s, 'abandon')),
-      ),
-    );
-  } else {
-    const minutes = Math.max(
-      0,
-      Math.round((Date.parse(s.finishedAt) - Date.parse(s.startedAt)) / 60000),
-    );
-    const embed = new EmbedBuilder()
-      .setColor(0x81e2ba)
-      .setTitle(s.state === 'completed' ? 'WORKOUT COMPLETE' : 'WORKOUT ABANDONED')
-      .setDescription(`${safe(s.name, 100)} · ${minutes} minutes\n${safe(s.note, 500)}`);
-    // Discord field/total limits: full history is in the admin; paginate recommendations below.
-    for (const e of s.exercises.slice(0, 5)) {
-      const r = s.recommendations.find((r) => r.id === e.id);
-      embed.addFields({
-        name: safe(e.name, 100),
-        value: safe(`${workSets(e)}${r ? '\n' + r.outcome + ': ' + r.reason : ''}`, 800),
-      });
-    }
-    if (s.exercises.length > 5)
-      embed.setFooter({
-        text: 'Full session and remaining recommendations are available in Workout History.',
-      });
-    embeds.push(embed);
-    const pending = s.recommendations.filter(
-      (r) => !s.decisions.some((d) => d.entryId === r.id && d.valid !== false),
-    );
-    if (s.state === 'completed' && pending.length)
-      components.push(
-        new ActionRowBuilder().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId(custom(s, 'recommend'))
-            .setPlaceholder('Review a progression recommendation')
-            .addOptions(
-              pending.slice(0, 25).map((r) => ({
-                label: safe(s.exercises.find((e) => e.id === r.id)?.name, 100),
-                description: safe(r.outcome + ': ' + r.reason, 100),
-                value: r.id,
-              })),
-            ),
-        ),
-      );
-  }
-  return { content: '', embeds, components, allowedMentions: { parse: [] } };
 }
 function modal(s, action, title, fields, extra = '') {
   const m = new ModalBuilder().setCustomId(custom(s, action, extra)).setTitle(title);
@@ -470,7 +355,7 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
           if (!s) throw new Error('No active workout. Use /workout start.');
           return await present(i, s);
         }
-        const [, sessionId, revision, action, extra] = i.customId.split(':');
+        let [, sessionId, revision, action, extra] = i.customId.split(':');
         if (sessionId === 'build') return await builder.handle(i);
         if (sessionId === 'create' || sessionId === 'launch-free') {
           if(revision!==userId) throw new Error('This selection belongs to another user.');
@@ -584,6 +469,15 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
         )
           return await present(i, s);
         assertSource(i, s);
+        if(action==='more') {
+          if(s.state!=='active'||!i.isStringSelectMenu?.()||!moreActions(s).some(([value])=>value===i.values[0])) throw new Error('This action is unavailable. Resume the workout.');
+          action=i.values[0];
+        }
+        if(action==='view-details') return await i.update(sessionDetails(s,Number(extra)||0));
+        if(action==='summary-page') {
+          if(s.state==='active') throw new Error('Workout is still active.');
+          return await i.update(sessionMessage(s,{page:Number(extra)||0}));
+        }
         const e = s.exercises[s.currentIndex];
         const get = (key) => i.fields.getTextInputValue(key);
         const apply = (action, input = {}) =>
