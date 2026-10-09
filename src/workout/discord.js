@@ -15,6 +15,8 @@ import {
 } from 'discord.js';
 import { formatResistance, parseResistance } from './model.js';
 import { filterExercises } from './starter.js';
+import { exerciseHistoryPages } from './history.js';
+import { createWorkoutBuilder } from './discord-builder.js';
 const row = (...buttons) => new ActionRowBuilder().addComponents(buttons);
 const button = (label, id, style = ButtonStyle.Secondary, disabled = false) =>
   new ButtonBuilder().setLabel(label).setCustomId(id).setStyle(style).setDisabled(disabled);
@@ -27,13 +29,15 @@ export function workoutDefinition({ guild = false } = {}) {
     .addSubcommand((s) =>
       s
         .setName('start')
-        .setDescription('Start or choose a planned workout; optionally start free')
-        .addBooleanOption((o) => o.setName('free').setDescription('Unplanned workout')),
+        .setDescription('Choose and preview a workout before confirming Start')
+        .addBooleanOption((o) => o.setName('free').setDescription('Preview a free workout before confirming Start')),
     )
     .addSubcommand((s) =>
       s.setName('resume').setDescription('Recover the active workout after restart'),
     )
-    .addSubcommand((s) => s.setName('history').setDescription('Your recent completed workouts'));
+    .addSubcommand((s) => s.setName('history').setDescription('Your recent completed workouts'))
+    .addSubcommand((s) => s.setName('exercise').setDescription('Browse recorded exercise history')
+      .addStringOption(o => o.setName('name').setDescription('Search exercise name or alias (e.g. bench or RDL)')));
   if (!guild)
     definition
       .setContexts(InteractionContextType.BotDM)
@@ -187,6 +191,53 @@ function modal(s, action, title, fields, extra = '') {
 export function createWorkoutHandler({ config, settings, workout, logger, client }) {
   const busyUsers = new Set();
   const selections = new Map();
+  const planConfirmations = new Map();
+  const historyTickets = new Map();
+  function historyTicket(i, state) {
+    for (const [key, ticket] of historyTickets) if (ticket.until < Date.now()) historyTickets.delete(key);
+    if (historyTickets.size >= 1000) historyTickets.delete(historyTickets.keys().next().value);
+    const token = randomBytes(12).toString('hex');
+    historyTickets.set(token, { ...state, userId: i.user.id, channelId: i.channelId, until: Date.now() + 600000 });
+    return token;
+  }
+  async function historySelection(i, query = '', page = 0, update = false) {
+    const choices = filterExercises(workout.historyExercises(i.user.id), { search: query, status: 'all' });
+    if (choices.length === 1 && query) return showExerciseHistory(i, choices[0].id, 0, update);
+    page = Math.max(0, Math.min(page, Math.max(0, Math.ceil(choices.length / 25) - 1)));
+    const visible = choices.slice(page * 25, (page + 1) * 25);
+    const token = historyTicket(i, { query, page, choices: visible.map(e => e.id) });
+    const id = action => `wo:eh:${token}:${action}`;
+    const components = [];
+    if (visible.length) components.push(row(new StringSelectMenuBuilder().setCustomId(id('select'))
+      .setPlaceholder('Choose an exercise to review').addOptions(visible.map(e => ({
+        label: safe(e.name, 100), value: e.id,
+        description: safe([e.variation, e.active ? e.category : 'Archived / historical'].filter(Boolean).join(' · ') || 'Exercise library', 100),
+      })))));
+    components.push(row(button('Search by name or alias', id('search')),
+      button('Earlier choices', id('choices-back'), ButtonStyle.Secondary, page === 0),
+      button('More choices', id('choices-next'), ButtonStyle.Secondary, (page + 1) * 25 >= choices.length)));
+    const payload = { content: choices.length ? `${choices.length} exercises${query ? ' matching ' + safe(query, 100) : ''}. Includes archived exercises. Search to narrow the list.` : 'No matching exercises. Search another name or alias.',
+      embeds: [], components, allowedMentions: { parse: [] } };
+    return update ? i.update(payload) : i.reply({ ...payload, flags: MessageFlags.Ephemeral });
+  }
+  async function showExerciseHistory(i, exerciseId, page = 0, update = false) {
+    const history = workout.exerciseHistory(i.user.id, exerciseId);
+    const pages = exerciseHistoryPages(history);
+    page = Math.max(0, Math.min(page, pages.length - 1));
+    const token = historyTicket(i, { exerciseId, page });
+    const id = action => `wo:eh:${token}:${action}`;
+    const embed = new EmbedBuilder().setColor(0x81e2ba)
+      .setTitle(safe(history.exercise.name + ' — HISTORY', 256))
+      .setDescription(safe([history.exercise.variation, history.exercise.active ? '' : 'Archived / historical exercise',
+        pages[page].length ? 'Completed workouts · newest first. Each line is an actual recorded set.' : 'No completed sets recorded for this exercise.'].filter(Boolean).join('\n'), 1000))
+      .setFooter({ text: `Page ${page + 1}/${pages.length} · Dates: recorded workout start (UTC) · ⚠ questionable` });
+    if (pages[page].length) embed.addFields(pages[page]);
+    const payload = { content: '', embeds: [embed], components: [row(
+      button('Newer', id('newer'), ButtonStyle.Secondary, page === 0),
+      button('Older', id('older'), ButtonStyle.Secondary, page === pages.length - 1),
+      button('Choose another exercise', id('different')))], allowedMentions: { parse: [] } };
+    return update ? i.update(payload) : i.reply({ ...payload, flags: MessageFlags.Ephemeral });
+  }
   const exerciseSearches = new Map();
   async function exerciseChoices(i, s, query, page = 0) {
     const exercises = filterExercises(workout.catalog(i.user.id).exercises, { search: query });
@@ -204,14 +255,15 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
         ...base,
         content:
           'No active programs. Create or activate a program in Workout → Programs, then use /workout today.',
+        components: [row(button('Create Saved Workout', 'wo:create:' + i.user.id),
+          button('Free Workout', 'wo:launch-free:' + i.user.id))],
       });
     if (selection.kind === 'resolved') {
-      const plan = workout.setNext(
-        i.user.id,
-        selection.program.id,
-        selection.template.id,
-        selection.program.revision,
-      );
+      const plan = selection;
+      for (const [key, ticket] of planConfirmations) if(ticket.until<Date.now()) planConfirmations.delete(key);
+      if(planConfirmations.size>=1000) planConfirmations.delete(planConfirmations.keys().next().value);
+      const confirmation=randomBytes(12).toString('hex');
+      planConfirmations.set(confirmation,{userId:i.user.id,channelId:i.channelId,programId:plan.program.id,templateId:plan.template.id,programRevision:plan.program.revision,until:Date.now()+600000});
       const embed = new EmbedBuilder()
         .setTitle(safe(plan.template.name, 200))
         .setColor(0x81e2ba)
@@ -242,10 +294,12 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
           row(
             button(
               'Start Workout',
-              'wo:plan:' + plan.program.id + ':' + plan.template.id + ':' + plan.program.revision,
+              'wo:confirm:' + confirmation + ':start',
               ButtonStyle.Primary,
             ),
             button('Choose Different Workout', 'wo:choose:' + i.user.id),
+            button('Free Workout', 'wo:launch-free:' + i.user.id),
+            button('Create Saved Workout', 'wo:create:' + i.user.id),
           ),
         ],
       });
@@ -298,6 +352,38 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
           : safe(selection.program.name, 100) + ' — choose a planned workout.',
       components: controls,
     });
+  }
+  const launchTickets = new Map();
+  const builder = createWorkoutBuilder(workout, choose, (i, update) => startChooser(i, update));
+  async function startChooser(i, update = false, page = 0, free = false) {
+    const active = workout.active(i.user.id);
+    const choices = workout.catalog(i.user.id).programs.filter(p => p.active)
+      .flatMap(program => program.templates.map(template => ({program, template})));
+    const saved = workout.repo.preferences().plans[i.user.id];
+    const recommended = choices.find(c => c.program.id === saved?.programId && c.template.id === saved?.templateId);
+    for (const [key, ticket] of launchTickets) if (ticket.until < Date.now()) launchTickets.delete(key);
+    const token = randomBytes(12).toString('hex');
+    page = Math.max(0, Math.min(page, Math.max(0, Math.ceil(choices.length / 25) - 1)));
+    launchTickets.set(token, {userId:i.user.id,channelId:i.channelId,choices,page,recommended,activeId:active?.id,until:Date.now()+600000});
+    const id = action => 'wo:launch:' + token + ':' + action;
+    const components = [];
+    let content = active ? 'An active workout already exists: ' + safe(active.name,100) + '. Resume it to continue.' :
+      free ? 'Free workout: add exercises as you go. No session is created until you press Start Free Workout.' :
+      (recommended ? 'Current next workout: ' + safe(recommended.program.name,100) + ' → ' + safe(recommended.template.name,100) : 'No saved next workout.') + '\nSelect any workout to preview it. Starting requires confirmation.';
+    if (active) components.push(row(button('Resume Workout',id('resume'),ButtonStyle.Primary)));
+    else if (free) components.push(row(button('Start Free Workout',id('start-free'),ButtonStyle.Primary),button('Back to workouts',id('back'))));
+    else {
+      if (choices.length) components.push(row(new StringSelectMenuBuilder().setCustomId(id('select')).setPlaceholder('Choose a workout to preview').addOptions(choices.slice(page*25,(page+1)*25).map((c,index)=>({
+        label:safe(c.program.name+' — '+c.template.name,100),value:String(page*25+index),description:c===recommended?'Current next workout':'Preview this workout'
+      })))));
+      const actions=[button('Free Workout',id('free')),button('Create Saved Workout',id('create'))];
+      if(recommended) actions.unshift(button('Preview Next Workout',id('recommended')));
+      components.push(row(...actions));
+      if(choices.length>25) components.push(row(button('Earlier workouts',id('previous'),ButtonStyle.Secondary,page===0),button('More workouts',id('next'),ButtonStyle.Secondary,(page+1)*25>=choices.length)));
+      if(!choices.length) content+='\nNo active programs yet. Create a saved workout here or start a free workout.';
+    }
+    const payload={content,embeds:[],components,allowedMentions:{parse:[]}};
+    return update ? i.update(payload) : i.reply(payload);
   }
   const handles = (i) =>
     (i.isChatInputCommand?.() && i.commandName === 'workout') ||
@@ -360,6 +446,7 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
         const userId = i.user.id;
         if (i.isChatInputCommand?.()) {
           const sub = i.options.getSubcommand();
+          if (sub === 'exercise') return await historySelection(i, i.options.getString('name') || '');
           if (sub === 'history') {
             const sessions = workout
               .state(userId)
@@ -378,30 +465,58 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
             });
           }
           if (sub === 'today') return await choose(i, workout.selection(userId));
-          let s = workout.active(userId);
-          if (sub !== 'resume' && !s) {
-            if (i.options.getBoolean('free'))
-              s = workout.start(userId, { free: true, requestId: i.id });
-            else {
-              const selection = workout.selection(userId);
-              if (selection.kind !== 'resolved') return await choose(i, selection);
-              workout.setNext(
-                userId,
-                selection.program.id,
-                selection.template.id,
-                selection.program.revision,
-              );
-              s = workout.start(userId, {
-                programId: selection.program.id,
-                templateId: selection.template.id,
-                requestId: i.id,
-              });
-            }
-          }
+          if (sub === 'start') return await startChooser(i, false, 0, !!i.options.getBoolean('free'));
+          const s = workout.active(userId);
           if (!s) throw new Error('No active workout. Use /workout start.');
           return await present(i, s);
         }
         const [, sessionId, revision, action, extra] = i.customId.split(':');
+        if (sessionId === 'build') return await builder.handle(i);
+        if (sessionId === 'create' || sessionId === 'launch-free') {
+          if(revision!==userId) throw new Error('This selection belongs to another user.');
+          return sessionId==='create' ? await builder.open(i) : await startChooser(i,true,0,true);
+        }
+        if (sessionId === 'launch') {
+          const ticket=launchTickets.get(revision);
+          if(!ticket||ticket.until<Date.now()) throw new Error('Workout selection expired. Use /workout start again.');
+          if(ticket.userId!==userId||ticket.channelId!==i.channelId) throw new Error('This selection belongs to another user or channel.');
+          if(action==='resume') {const active=workout.active(userId);if(!active) throw new Error('That workout is no longer active. Use /workout start.');return await present(i,active);}
+          if(action==='create') return await builder.open(i);
+          if(action==='free'||action==='back'||action==='previous'||action==='next') return await startChooser(i,true,ticket.page+(action==='next'?1:action==='previous'?-1:0),action==='free');
+          if(action==='start-free') {
+            const active=workout.active(userId);
+            if(ticket.startedId && (!active || active.id!==ticket.startedId))
+              throw new Error('That Start confirmation was already used. Open /workout start again.');
+            const session=workout.start(userId,{free:true,requestId:i.id});
+            ticket.startedId=session.id;
+            return await present(i,session);
+          }
+          const choice=action==='recommended'?ticket.recommended:ticket.choices.slice(ticket.page*25,(ticket.page+1)*25).find((c,index)=>String(ticket.page*25+index)===i.values?.[0]);
+          if(!choice) throw new Error('Choose a listed workout.');
+          return await choose(i,workout.selection(userId,{programId:choice.program.id,templateId:choice.template.id,expectedProgramRevision:choice.program.revision}),true);
+        }
+        if (sessionId === 'eh') {
+          const ticket = historyTickets.get(revision);
+          if (!ticket || ticket.until < Date.now()) throw new Error('Exercise history view expired. Run /workout exercise again.');
+          if (ticket.userId !== userId || ticket.channelId !== i.channelId)
+            throw new Error('This exercise history view belongs to another user or channel.');
+          if (action === 'search' && i.isButton?.()) {
+            const input = new TextInputBuilder().setCustomId('search').setLabel('Exercise name or alias')
+              .setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(100);
+            return await i.showModal(new ModalBuilder().setCustomId(`wo:eh:${revision}:query`)
+              .setTitle('Find exercise history').addComponents(row(input)));
+          }
+          if (action === 'query' && i.isModalSubmit?.())
+            return await historySelection(i, i.fields.getTextInputValue('search').trim(), 0, true);
+          if (action === 'select' && i.isStringSelectMenu?.() && ticket.choices?.includes(i.values[0]))
+            return await showExerciseHistory(i, i.values[0], 0, true);
+          if (action === 'different') return await historySelection(i, '', 0, true);
+          if (['choices-back', 'choices-next'].includes(action) && ticket.choices)
+            return await historySelection(i, ticket.query, ticket.page + (action === 'choices-next' ? 1 : -1), true);
+          if (['newer', 'older'].includes(action) && ticket.exerciseId)
+            return await showExerciseHistory(i, ticket.exerciseId, ticket.page + (action === 'older' ? 1 : -1), true);
+          throw new Error('Invalid exercise history selection. Run /workout exercise again.');
+        }
         if (sessionId === 'choose') {
           if (revision !== userId)
             throw new Error('This workout selection belongs to another user.');
@@ -445,26 +560,21 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
           selections.delete(revision);
           return result;
         }
-        if (sessionId === 'plan') {
-          const active = workout.active(userId);
-          if (active) return await present(i, active);
-          if (workout.owned('programs', revision, userId).revision !== Number(extra))
-            throw new Error('Plan changed. Use /workout today to review it again.');
-          const s = workout.start(userId, {
-            programId: revision,
-            templateId: action,
-            requestId: i.id,
-          });
-          // Replace the plan message rather than adding a second active embed.
-          if (s.message) {
-            await i.reply({
-              content: 'A workout already exists. Use /workout resume.',
-              flags: MessageFlags.Ephemeral,
-            });
-            return;
-          }
-          workout.bindMessage(userId, s.id, { channelId: i.channelId, messageId: i.message.id });
-          return await i.update(sessionMessage(s));
+        if (sessionId === 'plan') throw new Error('That preview is stale. Use /workout start to review again.');
+        if (sessionId === 'confirm') {
+          const ticket=planConfirmations.get(revision);
+          if(!ticket||ticket.until<Date.now()) throw new Error('Start confirmation expired. Use /workout start again.');
+          if(ticket.userId!==userId||ticket.channelId!==i.channelId) throw new Error('This Start confirmation belongs to another user or channel.');
+          if(action!=='start'||!i.isButton?.()) throw new Error('Use the Start Workout button.');
+          const active=workout.active(userId);
+          if(active) return await present(i,active);
+          if(ticket.startedId) throw new Error('That Start confirmation was already used. Open /workout start again.');
+          workout.selection(userId,{programId:ticket.programId,templateId:ticket.templateId,expectedProgramRevision:ticket.programRevision});
+          const session=workout.start(userId,{programId:ticket.programId,templateId:ticket.templateId,requestId:i.id});
+          ticket.startedId=session.id;
+          workout.setNext(userId,ticket.programId,ticket.templateId,ticket.programRevision);
+          workout.bindMessage(userId,session.id,{channelId:i.channelId,messageId:i.message.id});
+          return await i.update(sessionMessage(session));
         }
         const s = workout.session(sessionId, userId);
         if (

@@ -555,6 +555,28 @@ export class WorkoutService {
     this.repo.commit([{ key: 'session:' + s.id, value: s }]);
     return s;
   }
+  historyExercises(userId) {
+    user(userId);
+    const records = this.repo.records('exercises').filter(e => e.userId === userId);
+    const known = new Set(records.map(e => e.id));
+    for (const session of this.repo.sessions().filter(s => s.userId === userId && s.state === 'completed'))
+      for (const entry of session.exercises)
+        if (!known.has(entry.exerciseId)) {
+          records.push({ id: entry.exerciseId, name: entry.name, variation: entry.variation || '',
+            aliases: [], category: '', equipment: '', active: false });
+          known.add(entry.exerciseId);
+        }
+    return records;
+  }
+  exerciseHistory(userId, exerciseId) {
+    const exercise = this.historyExercises(userId).find(e => e.id === exerciseId);
+    if (!exercise) throw new Error('Exercise history not found for this user. Choose an exercise again.');
+    const sessions = this.repo.sessions()
+      .filter(s => s.userId === userId && s.state === 'completed')
+      .map(s => ({ ...s, exercises: s.exercises.filter(e => e.exerciseId === exerciseId && e.sets.length) }))
+      .filter(s => s.exercises.length);
+    return { exercise, sessions };
+  }
   state(userId) {
     const catalog = this.catalog(userId),
       sessions = this.repo.sessions().filter((s) => s.userId === userId);
