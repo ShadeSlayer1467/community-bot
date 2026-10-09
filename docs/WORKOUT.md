@@ -4,12 +4,16 @@ Workout is a first-party Community Bot module in the same application and Discor
 
 ## Start using it
 
-1. Open the local admin, sign in, and choose **Workout → Exercises**. Select your Discord user ID if it is not filled automatically. Create each meaningful variation separately. Name/variation/notes can preserve cable positions, grip, unilateral work and machine settings.
-2. Enter target sets, minimum/maximum reps, resistance type and units. Configure an increment or ordered available loads; for bodyweight progressions, create distinct exercises first, create an ordered chain, and assign that chain to exercise defaults or a program prescription.
-3. In **Programs**, create a program and one or more named planned workouts. Add exercises, edit each prescription, use Move up/down to set order, and save. Choose a planned workout as next. Program/template IDs are displayed for optional Discord command arguments.
+1. Open the local admin, sign in, and choose **Workout → Exercises**. Select your Discord user ID if it is not filled automatically. The personal library starts with 404 editable starter exercises. Search by name/alias and filter by category, equipment or Active/Archived/All; results are paginated. Create each meaningful variation separately. Name/variation/notes can preserve cable positions, grip, unilateral work and machine settings.
+2. Starter defaults use neutral 1-set/1-rep placeholders and manual progression, not a recommended prescription. Enter your program target sets, minimum/maximum reps, resistance type and units. Loaded starters require Change Weight before logging; no current working load is invented. Configure an increment or ordered available loads; for bodyweight progressions, create distinct exercises first, create an ordered chain, and assign that chain to exercise defaults or a program prescription.
+3. In **Programs**, create a program and one or more named planned workouts. Add exercises, edit each prescription, use Move up/down to set order, and save. Choose a planned workout as next. The selected next program/workout is shown by name. Use Set as Next; no internal IDs need copying.
 4. In **Workout Settings**, check allowed Discord user IDs (initially the configured owners) and the default unit. Existing resistance is never converted when the default unit changes.
-5. Connect the bot and **Sync commands to Discord** from Commands. Workout is registered globally for bot DMs, alongside the separate protected developer commands. Open the DM with this bot on your phone.
-6. Use `/workout today`, then **Start Workout**, or `/workout start`. For an unplanned workout use `/workout start free:true` and Add Exercise. `/workout resume` recovers an active workout after restart or a stale message. `/workout history` shows five concise recent completed sessions.
+5. Connect the bot and **Sync commands to Discord** from Commands. Workout is registered in configured servers, with a separate DM-only global registration so server command lists have one copy. Open your chosen server channel on your phone; the bot needs View Channel, Send Messages and Embed Links there. Developer commands retain their separate DM-only protection.
+6. Use `/workout today`: a saved next workout opens immediately; otherwise a single active program/template is automatic and multiple choices use named menus. Select the program/workout when asked, review the plan, then press **Start Workout**. **Choose Different Workout** reopens selection safely. `/workout start` starts a resolved plan or shows the same menus when a choice is needed. For an unplanned workout use `/workout start free:true` and Add Exercise. This opens a name/alias search modal (for example bench, RDL or BW squat), then a matching exercise menu. Empty search browses all active exercises; Search again changes the query. `/workout resume` recovers an active workout after restart or a stale message. `/workout history` shows five concise recent completed sessions.
+
+## Starter catalog
+
+`src/workout/starter-catalog.json` is versioned seed data. `starter.js` creates user-specific deterministic IDs. The persistent `starter-seeds.json` ledger records every processed starter name, including matches to existing user exercises. Seeding atomically merges only missing base names/aliases; user records and variations remain authoritative. Archived or deleted starters are never recreated on restart. Future catalog additions are processed once, without changing existing IDs, exercises, program definitions or session/history snapshots. Each allowed user is initialized at startup; newly selected users are initialized on first library access. Keep the ledger with your Workout backups. No global database, historical import or automatic progression chains are introduced.
 
 ## Data and architecture
 
@@ -37,13 +41,13 @@ The Discord Change Weight field accepts `235 lb`, `2x135`, `total:235`, `per-sid
 
 ## Fast Discord workflow
 
-Workout interactions are restricted to this bot’s DM and explicitly allowed user IDs. Workout does not require or grant developer/TOTP elevation. Each interaction resolves the session by user ID, checks the latest revision and source message, and persists changes before refreshing the embed. Source Discord message IDs locate the UI; session UUIDs identify the records.
+Workout interactions require a configured server or this bot’s DM, plus an explicitly allowed user ID. Server messages are visible to people who can read the channel; only the session owner can use its controls. Unconfigured servers and other users are rejected. Workout does not require or grant developer/TOTP elevation. Each interaction resolves the session by user ID, checks the latest revision and source message, and persists changes before refreshing the embed. Source Discord message IDs locate the UI; session UUIDs identify the records.
 
 Log Set asks only for reps and uses the current working resistance. That resistance carries forward. Change Weight changes the following sets. Repeat Last opens a reps field prefilled from the last set and reuses that set’s resistance. Edit Last and Edit Earlier correct mistakes; Log Details adds set type, notes or an uncertainty flag without burdening normal logging. Exercise notes and uncertainty have their own modal. The admin also supports session-level notes/uncertainty and optional RPE/RIR.
 
 Previous/Next navigation is safe and does not imply completion or skip. Add Exercise adds an unplanned slot, even to a planned session. Skip, Delete Set, Finish and Abandon first show confirmation with Keep Training. Confirmation tokens are short-lived, user/session/action/target/revision bound, single use and invalid after state changes or restart. There is no Dismiss or Close button. Abandon preserves the record; it does not erase data.
 
-The active DM message updates in place. `/workout resume` edits the saved message or creates a replacement if it cannot be fetched; old controls then fail source checks. Requests have persisted IDs and revisions to prevent duplicate sets or stale overwrites. A failed Discord update can be recovered with resume; saved performance remains authoritative. Slash start/resume has a small acknowledgement in addition to the durable workout message; normal set logging does not create a new message.
+The active channel/DM message updates in place. `/workout resume` edits the saved message or creates a replacement if it cannot be fetched; old controls then fail source checks. Requests have persisted IDs and revisions to prevent duplicate sets or stale overwrites. A failed Discord update can be recovered with resume; saved performance remains authoritative. Slash start/resume has a small acknowledgement in addition to the durable workout message; normal set logging does not create a new message.
 
 ## Progression rules
 
@@ -75,7 +79,9 @@ Historical corrections recalculate recommendations and invalidate previous decis
 - **Active:** quick reps logging, repeats, load changes, navigation, set edits/deletion, notes/uncertainty and confirmed finish/abandon.
 - **Settings:** module-specific allowed users and default units.
 
-Routes are `/workout` and `/workout/{programs,exercises,history,progression,active,settings}`. They share the existing shell and authenticated deep-link behavior. Home gets the optional summary export from the Workout module; it has no workout editor logic. Workout state refresh is explicit. Browser edits to an active session make an older Discord embed stale until resume. Unsaved Workout editor changes should be saved before changing subpages or users.
+Routes are `/workout` and `/workout/{programs,exercises,history,progression,active,settings}`. They share the existing shell and authenticated deep-link behavior. Home gets the optional summary export from the Workout module; it has no workout editor logic. Selection menus use internal IDs only in option values/custom IDs, are user/channel-bound and expire after ten minutes or restart. Edited/removed programs or templates reject stale selections/previews and ask you to choose/review again. Selecting next only changes your preference; active sessions, history and program definitions stay intact.
+
+Workout state refresh is explicit. Browser edits to an active session make an older Discord embed stale until resume. Unsaved Workout editor changes should be saved before changing subpages or users.
 
 ## Limits and verification
 
@@ -83,7 +89,7 @@ There is no automatic calendar/scheduling philosophy, program cycling, exercise 
 
 Catalog limits: 30 templates per program, 50 exercise slots per template/session, 100 actual sets per exercise, 30 variations per chain. Discord displays concise previews/summary fields (first five exercises); full sessions remain in admin. Exercise selection is paginated in groups of 25. Discord earlier-set menus show the last 25 sets; admin edits all sets. Recommendations use paginated pending menu options and can also be reviewed in admin. These bounds respect Discord message/component limits. See the [official interaction guide](https://discord.com/developers/docs/interactions/receiving-and-responding) for the underlying message-update/modal mechanisms.
 
-The final build checked 65 JavaScript modules; the full suite passed all 86 tests without skips. The expanded Edge smoke and JavaScript/C# notification-client smoke passed, with no browser page errors or live Discord sends.
+The final build checked 67 JavaScript modules; the full suite passed all 101 tests without skips. The expanded Edge smoke and JavaScript/C# notification-client smoke passed, with no browser page errors or live Discord sends.
 
 Offline tests cover catalogs/order/revisions, snapshots, restart persistence, carry-forward, corrections, confirmed destructive actions, planned/free work, previous lookup, weighted/chain progression, decisions, uncertainty, recovery journaling, user isolation, Discord interactions/sync and authenticated APIs/routes. The Edge smoke test uses real browser forms with temporary data and stub Discord delivery and checks all Workout subpages at 390px width. Run `npm run check` with Node 22.12+; run `scripts/ui-smoke.js` with `PLAYWRIGHT_MODULE` configured. No real credentials or live messages are needed for these tests.
 
@@ -91,7 +97,7 @@ Offline tests cover catalogs/order/revisions, snapshots, restart persistence, ca
 
 Use a disposable test program/session before relying on this during training.
 
-1. Sync commands and open this bot’s DM on your phone. Confirm an unlisted account cannot use Workout and that CustomCommand still requires its separate owner/TOTP flow.
+1. Sync commands and open the chosen configured server channel on your phone. Confirm an unlisted account cannot use Workout and that CustomCommand still requires its separate owner/TOTP flow.
 2. Run `/workout today`; review the plan and previous performance. Start the planned workout.
 3. Log several sets by entering only reps. Confirm the same message updates and the resistance carries forward.
 4. Change resistance, including a pair/stack example, and verify later sets use the exact representation.

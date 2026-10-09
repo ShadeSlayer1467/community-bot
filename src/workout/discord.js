@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   SlashCommandBuilder,
   InteractionContextType,
@@ -13,42 +14,31 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { formatResistance, parseResistance } from './model.js';
+import { filterExercises } from './starter.js';
 const row = (...buttons) => new ActionRowBuilder().addComponents(buttons);
 const button = (label, id, style = ButtonStyle.Secondary, disabled = false) =>
   new ButtonBuilder().setLabel(label).setCustomId(id).setStyle(style).setDisabled(disabled);
 const safe = (s, max = 900) => String(s).replace(/@/g, '＠').slice(0, max);
-export function workoutDefinition() {
-  return new SlashCommandBuilder()
+export function workoutDefinition({ guild = false } = {}) {
+  const definition = new SlashCommandBuilder()
     .setName('workout')
-    .setDescription('Plan, log and review your workouts in this bot DM')
-    .setContexts(InteractionContextType.BotDM)
-    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
-    .addSubcommand((s) =>
-      s
-        .setName('today')
-        .setDescription('Preview your selected planned workout')
-        .addStringOption((o) =>
-          o.setName('program').setDescription('Program ID (from admin)').setMaxLength(60),
-        )
-        .addStringOption((o) =>
-          o.setName('template').setDescription('Planned workout ID').setMaxLength(60),
-        ),
-    )
+    .setDescription('Plan, log and review your workouts')
+    .addSubcommand((s) => s.setName('today').setDescription('Choose and preview your next workout'))
     .addSubcommand((s) =>
       s
         .setName('start')
-        .setDescription('Start a planned or free workout')
-        .addBooleanOption((o) => o.setName('free').setDescription('Unplanned workout'))
-        .addStringOption((o) => o.setName('program').setDescription('Program ID').setMaxLength(60))
-        .addStringOption((o) =>
-          o.setName('template').setDescription('Planned workout ID').setMaxLength(60),
-        ),
+        .setDescription('Start or choose a planned workout; optionally start free')
+        .addBooleanOption((o) => o.setName('free').setDescription('Unplanned workout')),
     )
     .addSubcommand((s) =>
       s.setName('resume').setDescription('Recover the active workout after restart'),
     )
-    .addSubcommand((s) => s.setName('history').setDescription('Your recent completed workouts'))
-    .toJSON();
+    .addSubcommand((s) => s.setName('history').setDescription('Your recent completed workouts'));
+  if (!guild)
+    definition
+      .setContexts(InteractionContextType.BotDM)
+      .setIntegrationTypes(ApplicationIntegrationType.GuildInstall);
+  return definition.toJSON();
 }
 function custom(s, action, extra = '') {
   return `wo:${s.id}:${s.revision}:${action}${extra ? ':' + extra : ''}`;
@@ -196,14 +186,131 @@ function modal(s, action, title, fields, extra = '') {
 }
 export function createWorkoutHandler({ config, settings, workout, logger, client }) {
   const busyUsers = new Set();
+  const selections = new Map();
+  const exerciseSearches = new Map();
+  async function exerciseChoices(i, s, query, page = 0) {
+    const exercises = filterExercises(workout.catalog(i.user.id).exercises, { search: query });
+    const options = exercises.slice(page * 25, (page + 1) * 25).map(e => ({ label: safe(e.name, 100), description: safe(e.variation || e.category || "Exercise library", 100), value: e.id }));
+    const controls = [];
+    if (options.length) controls.push(row(new StringSelectMenuBuilder().setCustomId(custom(s, "add-choice")).setPlaceholder("Choose an exercise").addOptions(options)));
+    controls.push(row(button("Back", custom(s, "keep-training")), button("Search again", custom(s, "add")), button("Earlier", custom(s, "add-page", String(page - 1)), ButtonStyle.Secondary, page <= 0), button("More", custom(s, "add-page", String(page + 1)), ButtonStyle.Secondary, (page + 1) * 25 >= exercises.length)));
+    return i.update({ content: options.length ? `${exercises.length} matches for ${safe(query || "all exercises", 100)}. Choose an exercise.` : "No matching active exercises. Search another name or alias.", embeds: [], components: controls, allowedMentions: { parse: [] } });
+  }
+  async function choose(i, selection, update = false, page = 0) {
+    const send = (payload) => (update ? i.update(payload) : i.reply(payload));
+    const base = { content: '', embeds: [], components: [], allowedMentions: { parse: [] } };
+    if (selection.kind === 'empty')
+      return send({
+        ...base,
+        content:
+          'No active programs. Create or activate a program in Workout → Programs, then use /workout today.',
+      });
+    if (selection.kind === 'resolved') {
+      const plan = workout.setNext(
+        i.user.id,
+        selection.program.id,
+        selection.template.id,
+        selection.program.revision,
+      );
+      const embed = new EmbedBuilder()
+        .setTitle(safe(plan.template.name, 200))
+        .setColor(0x81e2ba)
+        .setDescription(safe(plan.program.name, 100) + ' · Today’s planned workout.');
+      for (const e of plan.template.exercises.slice(0, 5)) {
+        const ex = workout.owned('exercises', e.exerciseId, i.user.id),
+          last = workout.previous(i.user.id, e.exerciseId);
+        embed.addFields({
+          name: safe(ex.name, 100),
+          value: safe(
+            e.sets +
+              ' × ' +
+              e.minReps +
+              '–' +
+              e.maxReps +
+              '\nPlanned: ' +
+              formatResistance(e.resistance) +
+              '\nLast: ' +
+              (last ? last.exercises.map(workSets).join('\n') : 'None'),
+            800,
+          ),
+        });
+      }
+      return send({
+        ...base,
+        embeds: [embed],
+        components: [
+          row(
+            button(
+              'Start Workout',
+              'wo:plan:' + plan.program.id + ':' + plan.template.id + ':' + plan.program.revision,
+              ButtonStyle.Primary,
+            ),
+            button('Choose Different Workout', 'wo:choose:' + i.user.id),
+          ),
+        ],
+      });
+    }
+    const choices = selection.kind === 'programs' ? selection.programs : selection.templates;
+    if (!Number.isInteger(page) || page < 0 || page * 25 >= choices.length)
+      throw new Error('Choose/review again with /workout today.');
+    for (const [key, ticket] of selections) if (ticket.until < Date.now()) selections.delete(key);
+    const token = randomBytes(12).toString('hex');
+    selections.set(token, {
+      userId: i.user.id,
+      channelId: i.channelId,
+      selection,
+      page,
+      until: Date.now() + 10 * 60 * 1000,
+    });
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId('wo:pick:' + token + ':select')
+      .setPlaceholder(
+        selection.kind === 'programs' ? 'Choose a program' : 'Choose a planned workout',
+      )
+      .addOptions(
+        choices
+          .slice(page * 25, (page + 1) * 25)
+          .map((c) => ({ label: safe(c.name, 100), value: c.id })),
+      );
+    const controls = [new ActionRowBuilder().addComponents(menu)];
+    if (choices.length > 25)
+      controls.push(
+        row(
+          button(
+            'Previous choices',
+            'wo:pick:' + token + ':previous',
+            ButtonStyle.Secondary,
+            page === 0,
+          ),
+          button(
+            'More choices',
+            'wo:pick:' + token + ':next',
+            ButtonStyle.Secondary,
+            (page + 1) * 25 >= choices.length,
+          ),
+        ),
+      );
+    return send({
+      ...base,
+      content:
+        selection.kind === 'programs'
+          ? 'Choose your workout program.'
+          : safe(selection.program.name, 100) + ' — choose a planned workout.',
+      components: controls,
+    });
+  }
   const handles = (i) =>
     (i.isChatInputCommand?.() && i.commandName === 'workout') ||
     ((i.isButton?.() || i.isStringSelectMenu?.() || i.isModalSubmit?.()) &&
       i.customId?.startsWith('wo:'));
   function authorize(i) {
     if (!workout) throw new Error('Workout service unavailable.');
-    if (i.inGuild() || i.context !== InteractionContextType.BotDM || i.channel?.type !== 1)
-      throw new Error('Use /workout in a direct message with this bot.');
+    if (i.inGuild()) {
+      if (i.context !== InteractionContextType.Guild || !config.guildIds.includes(i.guildId))
+        throw new Error('This server is not configured for Workout.');
+    } else if (i.context !== InteractionContextType.BotDM || i.channel?.type !== 1) {
+      throw new Error('Use /workout in a configured server or a direct message with this bot.');
+    }
     if (!workout.allowed(i.user.id))
       throw new Error('Your user ID is not allowed in Workout settings.');
     if (settings.read().disabled.includes('workout'))
@@ -211,7 +318,11 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
   }
   async function present(i, s) {
     const payload = sessionMessage(s);
-    if (i.isChatInputCommand?.()) {
+    if (
+      i.isChatInputCommand?.() ||
+      (i.isButton?.() &&
+        (s.message?.channelId !== i.channelId || s.message?.messageId !== i.message?.id))
+    ) {
       await i.deferReply({ flags: MessageFlags.Ephemeral });
       let message;
       if (s.message?.channelId === i.channelId)
@@ -228,7 +339,7 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
         allowedMentions: { parse: [] },
       });
     }
-    // Component/modal updates refresh the same durable DM message, including after restart.
+    // Component/modal updates refresh the same durable workout message, including after restart.
     await i.update(payload);
   }
   function assertSource(i, s) {
@@ -266,55 +377,77 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
               allowedMentions: { parse: [] },
             });
           }
-          if (sub === 'today') {
-            const plan = workout.planned(
-              userId,
-              i.options.getString('program'),
-              i.options.getString('template'),
-            );
-            const embed = new EmbedBuilder()
-              .setTitle(safe(plan.template.name, 200))
-              .setColor(0x81e2ba)
-              .setDescription('Today’s planned workout. Full plan is in the admin panel.');
-            for (const e of plan.template.exercises.slice(0, 5)) {
-              const ex = workout.owned('exercises', e.exerciseId, userId),
-                last = workout.previous(userId, e.exerciseId);
-              embed.addFields({
-                name: safe(ex.name, 100),
-                value: safe(
-                  `${e.sets} × ${e.minReps}–${e.maxReps}\nPlanned: ${formatResistance(e.resistance)}\nLast: ${last ? last.exercises.map(workSets).join('\n') : 'None'}`,
-                  800,
-                ),
+          if (sub === 'today') return await choose(i, workout.selection(userId));
+          let s = workout.active(userId);
+          if (sub !== 'resume' && !s) {
+            if (i.options.getBoolean('free'))
+              s = workout.start(userId, { free: true, requestId: i.id });
+            else {
+              const selection = workout.selection(userId);
+              if (selection.kind !== 'resolved') return await choose(i, selection);
+              workout.setNext(
+                userId,
+                selection.program.id,
+                selection.template.id,
+                selection.program.revision,
+              );
+              s = workout.start(userId, {
+                programId: selection.program.id,
+                templateId: selection.template.id,
+                requestId: i.id,
               });
             }
-            return i.reply({
-              embeds: [embed],
-              components: [
-                row(
-                  button(
-                    'Start Workout',
-                    `wo:plan:${plan.program.id}:${plan.template.id}:${plan.program.revision}`,
-                    ButtonStyle.Primary,
-                  ),
-                ),
-              ],
-              allowedMentions: { parse: [] },
-            });
           }
-          const s =
-            sub === 'resume'
-              ? workout.active(userId)
-              : workout.start(userId, {
-                  free: i.options.getBoolean('free') ?? false,
-                  programId: i.options.getString('program'),
-                  templateId: i.options.getString('template'),
-                  requestId: i.id,
-                });
           if (!s) throw new Error('No active workout. Use /workout start.');
           return await present(i, s);
         }
         const [, sessionId, revision, action, extra] = i.customId.split(':');
+        if (sessionId === 'choose') {
+          if (revision !== userId)
+            throw new Error('This workout selection belongs to another user.');
+          return await choose(i, workout.selection(userId, { ignoreSaved: true }), true);
+        }
+        if (sessionId === 'pick') {
+          const ticket = selections.get(revision);
+          if (!ticket || ticket.until < Date.now())
+            throw new Error('Workout selection expired. Choose/review again with /workout today.');
+          if (ticket.userId !== userId || ticket.channelId !== i.channelId)
+            throw new Error('This workout selection belongs to another user or channel.');
+          if (action === 'next' || action === 'previous')
+            return await choose(
+              i,
+              ticket.selection,
+              true,
+              ticket.page + (action === 'next' ? 1 : -1),
+            );
+          if (action !== 'select' || !i.isStringSelectMenu?.())
+            throw new Error('Invalid workout selection.');
+          const choices =
+            ticket.selection.kind === 'programs'
+              ? ticket.selection.programs
+              : ticket.selection.templates;
+          const choice = choices
+            .slice(ticket.page * 25, (ticket.page + 1) * 25)
+            .find((c) => c.id === i.values[0]);
+          if (!choice) throw new Error('Choose/review again with /workout today.');
+          const selection =
+            ticket.selection.kind === 'programs'
+              ? workout.selection(userId, {
+                  programId: choice.id,
+                  expectedProgramRevision: choice.revision,
+                })
+              : workout.selection(userId, {
+                  programId: ticket.selection.program.id,
+                  templateId: choice.id,
+                  expectedProgramRevision: ticket.selection.program.revision,
+                });
+          const result = await choose(i, selection, true);
+          selections.delete(revision);
+          return result;
+        }
         if (sessionId === 'plan') {
+          const active = workout.active(userId);
+          if (active) return await present(i, active);
           if (workout.owned('programs', revision, userId).revision !== Number(extra))
             throw new Error('Plan changed. Use /workout today to review it again.');
           const s = workout.start(userId, {
@@ -351,6 +484,11 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
             ...input,
           });
         if (i.isModalSubmit?.()) {
+          if (action === 'add-search') {
+            const query = get('search').trim();
+            exerciseSearches.set(s.id, { query, revision: s.revision });
+            return await exerciseChoices(i, s, query);
+          }
           if (action === 'log' || action === 'repeat')
             return await present(i, apply(action, { reps: Number(get('reps')) }));
           if (action === 'weight')
@@ -520,45 +658,12 @@ export function createWorkoutHandler({ config, settings, workout, logger, client
               ['uncertain', 'Questionable? yes / no', e.questionable ? 'yes' : 'no', false],
             ]),
           );
-        if (action === 'add' || action === 'add-page') {
-          const exercises = workout.catalog(userId).exercises.filter((e) => e.active),
-            page = Number(extra || 0);
-          const options = exercises.slice(page * 25, (page + 1) * 25).map((e) => ({
-            label: safe(e.name, 100),
-            description: safe(e.variation || 'Exercise library', 100),
-            value: e.id,
-          }));
-          if (!options.length)
-            throw new Error('Create active exercises in the admin library first.');
-          const components = [
-            new ActionRowBuilder().addComponents(
-              new StringSelectMenuBuilder()
-                .setCustomId(custom(s, 'add-choice'))
-                .setPlaceholder('Choose an exercise')
-                .addOptions(options),
-            ),
-            row(
-              button('Back', custom(s, 'keep-training')),
-              button(
-                'Earlier choices',
-                custom(s, 'add-page', String(page - 1)),
-                ButtonStyle.Secondary,
-                page <= 0,
-              ),
-              button(
-                'More choices',
-                custom(s, 'add-page', String(page + 1)),
-                ButtonStyle.Secondary,
-                (page + 1) * 25 >= exercises.length,
-              ),
-            ),
-          ];
-          return await i.update({
-            content: 'Add an exercise (unplanned slot).',
-            embeds: [],
-            components,
-            allowedMentions: { parse: [] },
-          });
+        if (action === 'add')
+          return await i.showModal(modal(s, 'add-search', 'Find an exercise', [['search', 'Name or alias (e.g. bench, RDL, BW squat)', '', false]]));
+        if (action === 'add-page') {
+          const search = exerciseSearches.get(s.id);
+          if (!search || search.revision !== s.revision) throw new Error('Search expired. Use Add Exercise again.');
+          return await exerciseChoices(i, s, search.query, Math.max(0, Number(extra) || 0));
         }
         if (action === 'add-choice')
           return await present(i, apply('add-exercise', { exerciseId: i.values[0] }));

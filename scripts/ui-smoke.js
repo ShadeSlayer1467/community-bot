@@ -262,17 +262,30 @@ try {
       .waitFor();
   };
   await workoutPage('Exercises');
+  assert.ok(workout.catalog(config.customOwnerId).exercises.length >= 400);
+  await page.getByLabel('Search exercises by name or alias', {exact:true}).fill('BW squat');
+  await page.getByRole('button', {name:'Edit Bodyweight Squat',exact:true}).waitFor();
+  assert.equal(await page.getByRole('button', {name:/^Edit /}).count(),1);
+  await page.getByLabel('Search exercises by name or alias', {exact:true}).fill('');
+  await page.getByLabel('Exercise category', {exact:true}).selectOption('Chest');
+  await page.getByLabel('Exercise equipment', {exact:true}).selectOption('Cable');
+  await page.getByRole('button', {name:'Edit Cable Fly',exact:true}).waitFor();
+  assert.ok(await page.getByRole('button', {name:/^Edit /}).count() < 25);
+  await page.getByLabel('Exercise category', {exact:true}).selectOption('');
+  await page.getByLabel('Exercise equipment', {exact:true}).selectOption('');
   const exerciseEditor = page.locator('#exerciseEditor');
   await exerciseEditor.getByLabel('Exercise name', { exact: true }).fill('Bench Press');
   await exerciseEditor.getByLabel('Variation / machine settings').fill('Paused');
   await exerciseEditor.getByLabel('Load (per implement / side when selected)').fill('225');
   await exerciseEditor.getByRole('button', { name: 'Save exercise', exact: true }).click();
   await page.locator('#notice').filter({ hasText: 'Workout changes saved' }).waitFor();
-  assert.equal(workout.catalog(config.customOwnerId).exercises[0].name, 'Bench Press');
+  assert.ok(workout.catalog(config.customOwnerId).exercises.some(e => e.name === 'Bench Press' && e.variation === 'Paused'));
   await workoutPage('Programs');
   let programEditor = page.locator('#programEditor');
   await programEditor.getByLabel('Program name', { exact: true }).fill('Strength');
   await programEditor.getByLabel('Planned workout name', { exact: true }).fill('Push A');
+  await programEditor.getByLabel('Search Exercise to add by name or alias', { exact: true }).fill('bench');
+  assert.ok(await programEditor.getByLabel('Exercise to add', { exact: true }).locator('option').count() < 25);
   await programEditor
     .getByLabel('Exercise to add', { exact: true })
     .selectOption({ label: 'Bench Press' });
@@ -281,9 +294,19 @@ try {
   await page.locator('#notice').filter({ hasText: 'Workout changes saved' }).waitFor();
   await page
     .locator('#workoutContent')
-    .getByRole('button', { name: 'Select Push A as next workout', exact: true })
+    .getByRole('button', { name: 'Set Push A as Next', exact: true })
     .waitFor();
   const workoutProgram = workout.catalog(config.customOwnerId).programs[0];
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Set Push A as Next', exact: true })
+    .click();
+  await page.locator('#workoutNextSelection').filter({ hasText: 'Strength → Push A' }).waitFor();
+  assert.equal(
+    workout.repo.preferences().plans[config.customOwnerId].templateId,
+    workoutProgram.templates[0].id,
+  );
+  assert.ok(!(await page.locator('#workoutContent').textContent()).includes(workoutProgram.id));
   assert.equal(workoutProgram.templates[0].exercises[0].resistance.value, 225);
   await workoutPage('Overview');
   await page

@@ -49,6 +49,27 @@ export function initWorkout({ $, api, notice, load }) {
     input.value = value ?? options[0]?.[0];
     e.append(input);
     parent.append(e);
+    if (options.some(([id]) => state?.exercises.some(e => e.id === id))) {
+      const filters = node('div');
+      parent.append(filters);
+      const search = field(filters, 'Search ' + label + ' by name or alias');
+      const category = select(filters, 'Category for ' + label, [['', 'All categories'], ...[...new Set(state.exercises.map(e => e.category).filter(Boolean))].sort().map(v => [v, v])]);
+      const equipment = select(filters, 'Equipment for ' + label, [['', 'All equipment'], ...[...new Set(state.exercises.map(e => e.equipment).filter(Boolean))].sort().map(v => [v, v])]);
+      const filter = () => {
+        const normalize = v => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const selected = input.value;
+        input.replaceChildren();
+        for (const [id, label] of options) {
+          const exercise = state.exercises.find(ex => ex.id === id);
+          if (exercise && id !== selected &&
+            ((!([exercise.name, ...exercise.aliases, exercise.variation].some(v => normalize(v).includes(normalize(search.value))))) ||
+             (category.value && exercise.category !== category.value) || (equipment.value && exercise.equipment !== equipment.value))) continue;
+          const option = node('option', label); option.value = id; input.append(option);
+        }
+        input.value = selected;
+      };
+      search.oninput = category.onchange = equipment.onchange = filter;
+    }
     return input;
   };
   const link = (parent, label, path) => {
@@ -261,7 +282,20 @@ export function initWorkout({ $, api, notice, load }) {
     );
     if (!state.exercises.length)
       empty(list, 'Create an exercise to begin. Variations have separate stable IDs and history.');
-    for (const e of state.exercises) {
+    const search = field(list, 'Search exercises by name or alias');
+    const category = select(list, 'Exercise category', [['', 'All categories'], ...[...new Set(state.exercises.map(e => e.category).filter(Boolean))].sort().map(v => [v,v])]);
+    const equipment = select(list, 'Exercise equipment', [['', 'All equipment'], ...[...new Set(state.exercises.map(e => e.equipment).filter(Boolean))].sort().map(v => [v,v])]);
+    const status = select(list, 'Exercise status', [['active','Active'],['archived','Archived'],['all','All']], 'active');
+    const results = node('div'); list.append(results);
+    let page = 0;
+    const draw = () => {
+      results.replaceChildren();
+      const normalize = v => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const matches = state.exercises.filter(e => (status.value === 'all' || e.active === (status.value === 'active')) &&
+        (!category.value || e.category === category.value) && (!equipment.value || e.equipment === equipment.value) &&
+        [e.name,...e.aliases,e.variation].some(v => normalize(v).includes(normalize(search.value)))).sort((a,b) => a.name.localeCompare(b.name));
+      results.append(node('p', matches.length + ' exercises · page ' + (page + 1)));
+      for (const e of matches.slice(page * 25, (page + 1) * 25)) {
       const row = node('div', undefined, 'workout-list-row');
       row.append(
         node(
@@ -277,8 +311,13 @@ export function initWorkout({ $, api, notice, load }) {
           history();
         }),
       );
-      list.append(row);
-    }
+      results.append(row);
+      }
+      if (page) results.append(button('Previous exercises', () => { page--; draw(); }));
+      if ((page + 1) * 25 < matches.length) results.append(button('More exercises', () => { page++; draw(); }));
+    };
+    search.oninput = category.onchange = equipment.onchange = status.onchange = () => { page = 0; draw(); };
+    draw();
     renderExerciseForm();
     chainEditor();
   }
@@ -333,7 +372,6 @@ export function initWorkout({ $, api, notice, load }) {
       });
     };
     if (e.id) {
-      empty(form, `Stable ID: ${e.id}`);
       form.append(
         button('Archive exercise', async () => {
           if (confirm('Archive this exercise? Historical records will remain.')) {
@@ -423,6 +461,17 @@ export function initWorkout({ $, api, notice, load }) {
   }
   function programs() {
     const p = panel('Programs');
+    const selection = node(
+      'p',
+      state.savedNext
+        ? 'Currently selected next workout: ' +
+            state.savedNext.programName +
+            ' → ' +
+            state.savedNext.name
+        : 'Currently selected next workout: None — use Set as Next below.',
+    );
+    selection.id = 'workoutNextSelection';
+    p.append(selection);
     if (!state.programs.length)
       empty(p, 'Programs contain one or more named planned workouts. Create exercises first.');
     p.append(
@@ -435,28 +484,33 @@ export function initWorkout({ $, api, notice, load }) {
     for (const program of state.programs) {
       const box = node('div', undefined, 'response');
       box.append(
-        node('h3', `${program.name}${program.active ? '' : ' · Inactive'}`),
+        node('h3', `${program.name} · ${program.active ? 'Active' : 'Inactive'}`),
         button('Edit ' + program.name, () => {
           editingProgram = program;
           draft = structuredClone(program);
           renderProgramEditor();
         }),
       );
-      empty(box, `ID: ${program.id} · Revision ${program.revision}`);
       for (const t of program.templates) {
-        empty(box, `${t.name} · ${t.exercises.length} exercises · ID: ${t.id}`);
-        box.append(
-          button('Select ' + t.name + ' as next workout', () =>
-            save('preferences', {
-              preferences: {
-                plans: {
-                  ...state.preferences.plans,
-                  [uid()]: { programId: program.id, templateId: t.id },
-                },
-              },
-            }),
-          ),
+        const selected =
+          state.savedNext?.programId === program.id && state.savedNext?.templateId === t.id;
+        empty(
+          box,
+          t.name +
+            ' · ' +
+            t.exercises.length +
+            ' exercises' +
+            (selected ? ' · Selected next workout' : ''),
         );
+        const setNext = button(selected ? 'Selected as Next' : 'Set ' + t.name + ' as Next', () =>
+          save('next', {
+            programId: program.id,
+            templateId: t.id,
+            expectedRevision: program.revision,
+          }),
+        );
+        setNext.disabled = selected || !program.active;
+        box.append(setNext);
       }
       p.append(box);
     }
@@ -1049,7 +1103,7 @@ export function initWorkout({ $, api, notice, load }) {
       );
     empty(
       form,
-      'Workout is available in this bot’s DM only. Each user has separate programs and sessions. This local authenticated admin can manage the selected user. Changing units does not convert existing loads.',
+      'Workout is available in configured servers and this bot’s DM. Server workout messages are visible to the channel; only the owning allowed user can control them. Each user has separate programs and sessions. This local authenticated admin can manage the selected user. Changing units does not convert existing loads.',
     );
     form.append(node('button', 'Save Workout settings'));
     form.onsubmit = (event) => {

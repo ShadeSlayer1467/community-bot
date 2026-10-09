@@ -1,0 +1,2477 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "name": "Barbell Bench Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": [
+        "Bench Press",
+        "bench",
+        "barbell bench",
+        "flat bench"
+      ]
+    },
+    {
+      "name": "Close-Grip Bench Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Wide-Grip Bench Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Paused Bench Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Spoto Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Larsen Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Incline Barbell Bench Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": [
+        "Incline Bench Press"
+      ]
+    },
+    {
+      "name": "Decline Barbell Bench Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Bench Press",
+      "category": "Chest",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Incline Bench Press",
+      "category": "Chest",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Decline Bench Press",
+      "category": "Chest",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Guillotine Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Floor Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "JM Press",
+      "category": "Chest",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine JM Press",
+      "category": "Chest",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Bench Press",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Incline Dumbbell Bench Press",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Decline Dumbbell Bench Press",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Neutral-Grip Dumbbell Press",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Floor Press",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Squeeze Press",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Fly",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Incline Dumbbell Fly",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Decline Dumbbell Fly",
+      "category": "Chest",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Machine Chest Press",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Incline Chest Press Machine",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Decline Chest Press Machine",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Plate-Loaded Chest Press",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Plate-Loaded Incline Chest Press",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Plate-Loaded Decline Chest Press",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Supine Chest Press Machine",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": [
+        "supine press machine"
+      ]
+    },
+    {
+      "name": "Converging Chest Press",
+      "category": "Chest",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Pec Deck Fly",
+      "category": "Chest",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Low-High Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "High-Low Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Mid Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Low-High Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm High-Low Cable Fly",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Cable Press",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Press",
+      "category": "Chest",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": [
+        "pushup",
+        "BW push-up"
+      ]
+    },
+    {
+      "name": "Incline Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Decline Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Feet-Elevated Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Knee Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Close-Grip Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Diamond Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Wide Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Deficit Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Ring Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Push-Up",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Chest Dip",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Chest Dip",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Chest Dip",
+      "category": "Chest",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Overhead Press",
+      "category": "Shoulders",
+      "equipment": "Barbell",
+      "aliases": [
+        "Overhead Press",
+        "OHP",
+        "military press"
+      ]
+    },
+    {
+      "name": "Seated Barbell Overhead Press",
+      "category": "Shoulders",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": [
+        "shoulder press"
+      ]
+    },
+    {
+      "name": "Seated Dumbbell Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Arnold Press",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Machine Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Plate-Loaded Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Dumbbell Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Shoulder Press",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Landmine Press",
+      "category": "Shoulders",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Landmine Press",
+      "category": "Shoulders",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Half-Kneeling Landmine Press",
+      "category": "Shoulders",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Landmine Press Through",
+      "category": "Shoulders",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Landmine Press Through",
+      "category": "Shoulders",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": [
+        "cable lat raise"
+      ]
+    },
+    {
+      "name": "Single-Arm Cable Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Lean-Away Cable Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Machine Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Behind-the-Back Cable Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Incline Dumbbell Lateral Raise",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Front Raise",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Front Raise",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Plate Front Raise",
+      "category": "Shoulders",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Front Raise",
+      "category": "Shoulders",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Upright Row",
+      "category": "Shoulders",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Upright Row",
+      "category": "Shoulders",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Upright Row",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Upright Row",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Rear Delt Fly",
+      "category": "Shoulders",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Rear Delt Fly",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Rear Delt Fly",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Rear Delt Fly",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Reverse Pec Deck",
+      "category": "Shoulders",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Face Pull",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Rope Face Pull",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Chest-Supported Rear Delt Row",
+      "category": "Shoulders",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Rear-Delt Row",
+      "category": "Shoulders",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Band Pull-Apart",
+      "category": "Shoulders",
+      "equipment": "Bands",
+      "aliases": []
+    },
+    {
+      "name": "Cable Y-Raise",
+      "category": "Shoulders",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Y-Raise",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Trap-3 Raise",
+      "category": "Shoulders",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Pull-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Chin-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Neutral-Grip Pull-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Wide-Grip Pull-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Close-Grip Pull-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Pull-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Chin-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Pull-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Chin-Up",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": [
+        "lat pd",
+        "pulldown",
+        "lat pull-down"
+      ]
+    },
+    {
+      "name": "Wide-Grip Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Narrow-Grip Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Neutral-Grip Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Underhand Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Supinated Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Pronated Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Paused Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Kneeling Single-Arm Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Half-Kneeling Single-Arm Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Plate-Loaded Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Machine Lat Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Bent-Over Barbell Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Pendlay Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Underhand Barbell Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Seal Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "T-Bar Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Landmine Row",
+      "category": "Back",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Meadows Row",
+      "category": "Back",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Chest-Supported T-Bar Row",
+      "category": "Back",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Row",
+      "category": "Back",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Dumbbell Row",
+      "category": "Back",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Chest-Supported Dumbbell Row",
+      "category": "Back",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Incline Dumbbell Row",
+      "category": "Back",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Seated Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Close-Grip Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Wide-Grip Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Neutral-Grip Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Chest-Supported Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Machine Row",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Chest-Supported Machine Row",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Plate-Loaded Row",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "High Row Machine",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Low Row Machine",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Machine Row",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm High Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm 45-Degree High Elbow Pull",
+      "category": "Back",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "High-Elbow Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Lat-Focused Cable Row",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Straight-Arm Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Rope Straight-Arm Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Straight-Arm Pulldown",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Cable Pullover",
+      "category": "Back",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Pullover",
+      "category": "Back",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Machine Pullover",
+      "category": "Back",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Australian Row",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Inverted Row",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Ring Row",
+      "category": "Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Shrug",
+      "category": "Traps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Shrug",
+      "category": "Traps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Shrug",
+      "category": "Traps",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Machine Shrug",
+      "category": "Traps",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Cable Shrug",
+      "category": "Traps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Behind-the-Back Shrug",
+      "category": "Traps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "EZ-Bar Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Straight-Bar Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Alternating Dumbbell Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Standing Dumbbell Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Seated Dumbbell Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Incline Dumbbell Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Bayesian Cable Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Cable Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Straight-Bar Cable Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "EZ-Bar Cable Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Behind-the-Body Cable Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Preacher Curl",
+      "category": "Biceps",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Preacher Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "EZ-Bar Preacher Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Machine Preacher Curl",
+      "category": "Biceps",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Curl Machine",
+      "category": "Biceps",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Spider Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Concentration Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Hammer Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cross-Body Hammer Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Rope Hammer Curl",
+      "category": "Biceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Reverse Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Pronated Barbell Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Pronated EZ-Bar Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Zottman Curl",
+      "category": "Biceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Drag Curl",
+      "category": "Biceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Chin-Up Curl / Biceps-Focused Chin-Up",
+      "category": "Biceps",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Cable Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": [
+        "triceps pushdown",
+        "tricep pushdown",
+        "tricep pd",
+        "pressdown"
+      ]
+    },
+    {
+      "name": "Straight-Bar Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Rope Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "V-Bar Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Reverse-Grip Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Reverse-Grip Triceps Pushdown",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Pushback",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Step-Back Single-Arm Cable Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Machine Triceps Pressdown",
+      "category": "Triceps",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Triceps Pressdown Machine",
+      "category": "Triceps",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Partial Triceps Pressdown Machine",
+      "category": "Triceps",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Overhead Cable Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Rope Overhead Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Overhead Cable Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Cable Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Overhead Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Dumbbell Overhead Triceps Extension",
+      "category": "Triceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "EZ-Bar Skull Crusher",
+      "category": "Triceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Skull Crusher",
+      "category": "Triceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Skull Crusher",
+      "category": "Triceps",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Skull Crusher",
+      "category": "Triceps",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "PJR Pullover",
+      "category": "Triceps",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "French Press",
+      "category": "Triceps",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Triceps Dip",
+      "category": "Triceps",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Triceps Dip",
+      "category": "Triceps",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Triceps Dip",
+      "category": "Triceps",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Dip",
+      "category": "Triceps",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Bench Dip",
+      "category": "Triceps",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Wrist Curl",
+      "category": "Forearms",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Wrist Curl",
+      "category": "Forearms",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Wrist Curl",
+      "category": "Forearms",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Reverse Wrist Curl",
+      "category": "Forearms",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Reverse Wrist Curl",
+      "category": "Forearms",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Reverse Wrist Curl",
+      "category": "Forearms",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Wrist Roller",
+      "category": "Forearms",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Plate Pinch",
+      "category": "Forearms",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Dead Hang",
+      "category": "Forearms",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Towel Dead Hang",
+      "category": "Forearms",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Gripper",
+      "category": "Forearms",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Bodyweight Squat",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": [
+        "BW squat",
+        "air squat"
+      ]
+    },
+    {
+      "name": "Chair Squat",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Box Squat",
+      "category": "Quads",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Goblet Squat",
+      "category": "Quads",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Back Squat",
+      "category": "Quads",
+      "equipment": "Barbell",
+      "aliases": [
+        "Back Squat"
+      ]
+    },
+    {
+      "name": "High-Bar Back Squat",
+      "category": "Quads",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Low-Bar Back Squat",
+      "category": "Quads",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Front Squat",
+      "category": "Quads",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Safety Bar Squat",
+      "category": "Quads",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Squat",
+      "category": "Quads",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Hack Squat",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Pendulum Squat",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Belt Squat",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Landmine Squat",
+      "category": "Quads",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Cyclist Squat",
+      "category": "Quads",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Heels-Elevated Squat",
+      "category": "Quads",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Sissy Squat",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Split Squat",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": [
+        "BSS"
+      ]
+    },
+    {
+      "name": "Front-Foot-Elevated Split Squat",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Reverse Lunge",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Forward Lunge",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Walking Lunge",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Stationary Lunge",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Deficit Reverse Lunge",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Step-Up",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Lateral Step-Up",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Single-Leg Leg Press",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Leg Press",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "45-Degree Leg Press",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Horizontal Leg Press",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Vertical Leg Press",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Leg Extension",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": [
+        "leg ext",
+        "leg ext machine"
+      ]
+    },
+    {
+      "name": "Single-Leg Leg Extension",
+      "category": "Quads",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Lunge",
+      "category": "Quads",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Conventional Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Sumo Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Trap-Bar Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Romanian Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": [
+        "RDL"
+      ]
+    },
+    {
+      "name": "Barbell Romanian Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Romanian Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Romanian Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Leg Romanian Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Stiff-Leg Deadlift",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Good Morning",
+      "category": "Hamstrings",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Pull-Through",
+      "category": "Hamstrings",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Lying Leg Curl",
+      "category": "Hamstrings",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Seated Leg Curl",
+      "category": "Hamstrings",
+      "equipment": "Machine",
+      "aliases": [
+        "ham curl",
+        "hamstring curl",
+        "leg curl",
+        "leg curl machine"
+      ]
+    },
+    {
+      "name": "Standing Leg Curl",
+      "category": "Hamstrings",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Leg Leg Curl",
+      "category": "Hamstrings",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Nordic Hamstring Curl",
+      "category": "Hamstrings",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Nordic Curl",
+      "category": "Hamstrings",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Sliding Leg Curl",
+      "category": "Hamstrings",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Swiss-Ball Leg Curl",
+      "category": "Hamstrings",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Glute Bridge",
+      "category": "Glutes",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Glute Bridge",
+      "category": "Glutes",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Glute Bridge",
+      "category": "Glutes",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Hip Thrust",
+      "category": "Glutes",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Hip Thrust",
+      "category": "Glutes",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Machine Hip Thrust",
+      "category": "Glutes",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Hip Thrust",
+      "category": "Glutes",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Leg Glute Bridge",
+      "category": "Glutes",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Single-Leg Hip Thrust",
+      "category": "Glutes",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Cable Glute Kickback",
+      "category": "Glutes",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Machine Glute Kickback",
+      "category": "Glutes",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Frog Pump",
+      "category": "Glutes",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Reverse Hyperextension",
+      "category": "Glutes",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "45-Degree Hip Extension",
+      "category": "Glutes",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Glute-Biased Back Extension",
+      "category": "Glutes",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Hip Abduction Machine",
+      "category": "Glutes",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Hip Adduction Machine",
+      "category": "Glutes",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Cable Hip Abduction",
+      "category": "Glutes",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Cable Hip Adduction",
+      "category": "Glutes",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Banded Hip Abduction",
+      "category": "Glutes",
+      "equipment": "Bands",
+      "aliases": []
+    },
+    {
+      "name": "Lateral Band Walk",
+      "category": "Glutes",
+      "equipment": "Bands",
+      "aliases": []
+    },
+    {
+      "name": "Standing Calf Raise",
+      "category": "Calves",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Seated Calf Raise",
+      "category": "Calves",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Machine Standing Calf Raise",
+      "category": "Calves",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Machine Seated Calf Raise",
+      "category": "Calves",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Leg Press Calf Raise",
+      "category": "Calves",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Smith Machine Calf Raise",
+      "category": "Calves",
+      "equipment": "Smith Machine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Leg Calf Raise",
+      "category": "Calves",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Donkey Calf Raise",
+      "category": "Calves",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Tibialis Raise",
+      "category": "Calves",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Machine Tibialis Raise",
+      "category": "Calves",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Calf Raise",
+      "category": "Calves",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Crunch",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Cable Crunch",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Kneeling Cable Crunch",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Ab Crunch Machine",
+      "category": "Core",
+      "equipment": "Machine",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Crunch",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Decline Crunch",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Sit-Up",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Decline Sit-Up",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Reverse Crunch",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Plank",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Plank",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "RKC Plank",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Long-Lever Plank",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Ab Wheel Rollout",
+      "category": "Core",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Barbell Rollout",
+      "category": "Core",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Body Saw",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Dead Bug",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": [
+        "deadbug"
+      ]
+    },
+    {
+      "name": "Hanging Knee Raise",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Hanging Leg Raise",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Captain's Chair Knee Raise",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Captain's Chair Leg Raise",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Lying Leg Raise",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Toes-to-Bar",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Russian Twist",
+      "category": "Core",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Cable Wood Chop",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "High-Low Cable Chop",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Low-High Cable Chop",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Pallof Press",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Half-Kneeling Pallof Press",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Cable Rotation",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Landmine Rotation",
+      "category": "Core",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Bicycle Crunch",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Side Plank",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Copenhagen Plank",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Side Bend",
+      "category": "Core",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Cable Side Bend",
+      "category": "Core",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Hollow Body Hold",
+      "category": "Core",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Back Extension",
+      "category": "Lower Back",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "45-Degree Back Extension",
+      "category": "Lower Back",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Weighted Back Extension",
+      "category": "Lower Back",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Bird Dog",
+      "category": "Lower Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Superman",
+      "category": "Lower Back",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Serratus Punch",
+      "category": "Serratus / Scapular",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Cable Serratus Punch",
+      "category": "Serratus / Scapular",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Serratus Punch",
+      "category": "Serratus / Scapular",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Landmine Serratus Press",
+      "category": "Serratus / Scapular",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Single-Arm Landmine Serratus Press",
+      "category": "Serratus / Scapular",
+      "equipment": "Landmine",
+      "aliases": []
+    },
+    {
+      "name": "Push-Up Plus",
+      "category": "Serratus / Scapular",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Wall Slide",
+      "category": "Serratus / Scapular",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Scapular Push-Up",
+      "category": "Serratus / Scapular",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Scapular Pull-Up",
+      "category": "Serratus / Scapular",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Farmer Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Dumbbell Farmer Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Trap-Bar Farmer Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Suitcase Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Front Rack Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Zercher Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Barbell",
+      "aliases": []
+    },
+    {
+      "name": "Overhead Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Waiter Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Dumbbell",
+      "aliases": []
+    },
+    {
+      "name": "Sandbag Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Bear Hug Carry",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Pike Push-Up",
+      "category": "Full Body / Carry",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Handstand Push-Up",
+      "category": "Full Body / Carry",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Assisted Handstand Push-Up",
+      "category": "Full Body / Carry",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Mountain Climber",
+      "category": "Full Body / Carry",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Burpee",
+      "category": "Full Body / Carry",
+      "equipment": "Bodyweight",
+      "aliases": []
+    },
+    {
+      "name": "Kettlebell Swing",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Kettlebell Deadlift",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Kettlebell Goblet Squat",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Kettlebell Clean",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Kettlebell Press",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Kettlebell Snatch",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Turkish Get-Up",
+      "category": "Full Body / Carry",
+      "equipment": "Kettlebell",
+      "aliases": []
+    },
+    {
+      "name": "Sled Push",
+      "category": "Full Body / Carry",
+      "equipment": "Sled",
+      "aliases": []
+    },
+    {
+      "name": "Sled Pull",
+      "category": "Full Body / Carry",
+      "equipment": "Sled",
+      "aliases": []
+    },
+    {
+      "name": "Prowler Push",
+      "category": "Full Body / Carry",
+      "equipment": "Sled",
+      "aliases": []
+    },
+    {
+      "name": "Battle Ropes",
+      "category": "Full Body / Carry",
+      "equipment": "Cable",
+      "aliases": []
+    },
+    {
+      "name": "Neck Flexion",
+      "category": "Neck",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Neck Extension",
+      "category": "Neck",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Neck Lateral Flexion",
+      "category": "Neck",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Neck Rotation",
+      "category": "Neck",
+      "equipment": "Other",
+      "aliases": []
+    },
+    {
+      "name": "Neck Harness Extension",
+      "category": "Neck",
+      "equipment": "Other",
+      "aliases": []
+    }
+  ]
+}

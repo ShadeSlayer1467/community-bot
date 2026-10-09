@@ -74,7 +74,7 @@ test('application mismatch fails closed and destroys the authenticated client', 
   assert.equal(host.lifecycleBusy, false);
 });
 
-test('sync registers Workout only as a global bot-DM command and removes it when disabled', async (t) => {
+test('sync registers Workout in configured servers and globally and removes it when disabled', async (t) => {
   const host = createHost();
   t.after(() => host.client.destroy());
   stubLogin(host);
@@ -92,7 +92,10 @@ test('sync registers Workout only as a global bot-DM command and removes it when
   };
   host.client.rest.delete = async (route) => deleted.push(route);
   await host.sync();
-  assert.ok(put.every((commands) => !commands.some((c) => c.name === 'workout')));
+  assert.ok(put.every((commands) => commands.some((c) => c.name === 'workout')));
+  assert.ok(
+    put.every((commands) => commands.find((c) => c.name === 'workout').contexts === undefined),
+  );
   assert.deepEqual(post.find((c) => c.name === 'workout').contexts, [1]);
   host.settings = { read: () => ({ ...defaults, disabled: [...defaults.disabled, 'workout'] }) };
   post.length = 0;

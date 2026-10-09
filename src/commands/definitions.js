@@ -1,3 +1,4 @@
+import { workoutDefinition } from '../workout/discord.js';
 import {
   SlashCommandBuilder,
   PermissionFlagsBits as P,
@@ -99,7 +100,10 @@ export function definitions(settings) {
     else if (c.access === 'moderator') command.setDefaultMemberPermissions(P.ManageGuild);
     commands.push(command);
   }
-  return commands.map((c) => c.toJSON());
+  return [
+    ...commands.map((c) => c.toJSON()),
+    ...(!settings.disabled.includes('workout') ? [workoutDefinition({ guild: true })] : []),
+  ];
 }
 
 // BOT_DM contexts only apply to global commands, not guild registrations.

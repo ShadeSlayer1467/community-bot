@@ -25,6 +25,7 @@ export class WorkoutService {
   }
   catalog(userId) {
     user(userId);
+    this.repo.seedStarters(userId);
     return {
       exercises: this.repo.records('exercises').filter((e) => e.userId === userId),
       programs: this.repo.records('programs').filter((p) => p.userId === userId),
@@ -98,21 +99,49 @@ export class WorkoutService {
     this.repo.commit([{ key: 'preferences', value: next }]);
     return next;
   }
-  planned(userId, programId, templateId) {
+  selection(userId, { ignoreSaved = false, programId, templateId, expectedProgramRevision } = {}) {
+    const programs = this.catalog(userId).programs.filter((p) => p.active);
+    const saved = this.repo.preferences().plans[userId];
+    if (!programId && !ignoreSaved && saved) {
+      const p = programs.find((p) => p.id === saved.programId),
+        t = p?.templates.find((t) => t.id === saved.templateId);
+      if (p && t) return { kind: 'resolved', program: p, template: t };
+    }
+    if (programId && !programs.some((p) => p.id === programId))
+      throw new Error('Plan changed. Choose/review again with /workout today.');
+    if (!programs.length) return { kind: 'empty' };
+    let p;
+    if (programId) {
+      p = programs.find((p) => p.id === programId);
+      if (!p || (expectedProgramRevision !== undefined && p.revision !== expectedProgramRevision))
+        throw new Error('Plan changed. Choose/review again with /workout today.');
+    } else if (programs.length === 1) p = programs[0];
+    else return { kind: 'programs', programs };
+    if (templateId) {
+      const t = p.templates.find((t) => t.id === templateId);
+      if (!t) throw new Error('Plan changed. Choose/review again with /workout today.');
+      return { kind: 'resolved', program: p, template: t };
+    }
+    if (p.templates.length === 1) return { kind: 'resolved', program: p, template: p.templates[0] };
+    return { kind: 'templates', program: p, templates: p.templates };
+  }
+  setNext(userId, programId, templateId, expectedProgramRevision) {
+    const plan = this.selection(userId, { programId, templateId, expectedProgramRevision });
+    if (plan.kind !== 'resolved') throw new Error('Choose an active program and planned workout.');
     const prefs = this.repo.preferences();
-    const selection = prefs.plans[userId];
-    const p = programId
-      ? this.owned('programs', programId, userId)
-      : selection
-        ? this.owned('programs', selection.programId, userId)
-        : this.repo.records('programs').find((p) => p.userId === userId && p.active);
-    if (!p || !p.active) throw new Error('Choose an active program in Workout Programs.');
-    const t =
-      p.templates.find(
-        (t) => t.id === (templateId ?? (programId ? null : selection?.templateId)),
-      ) ?? (templateId ? null : p.templates[0]);
-    if (!t) throw new Error('Planned workout not found.');
-    return { program: p, template: t };
+    prefs.plans[userId] = { programId, templateId };
+    this.repo.commit([{ key: 'preferences', value: prefs }]);
+    return plan;
+  }
+  planned(userId, programId, templateId) {
+    const plan = this.selection(userId, { programId, templateId });
+    if (plan.kind === 'empty')
+      throw new Error('Create or activate a program in Workout → Programs.');
+    if (plan.kind !== 'resolved')
+      throw new Error(
+        'Choose a workout with /workout today or set your next workout in Workout → Programs.',
+      );
+    return { program: plan.program, template: plan.template };
   }
   active(userId) {
     return this.repo.sessions().find((s) => s.userId === userId && s.state === 'active') ?? null;
@@ -321,6 +350,8 @@ export class WorkoutService {
             input.resistance ?? (action === 'repeat' ? last.resistance : entry.workingResistance),
           reps: input.reps ?? (action === 'repeat' ? last.reps : undefined),
         });
+        if (actual.resistance.kind === 'custom' && actual.resistance.display === 'Set working resistance')
+          throw new Error('Set working resistance with Change Weight before logging this exercise. Use BW or none if appropriate.');
         entry.sets.push({
           id: id(),
           order: entry.sets.length + 1,
@@ -543,6 +574,12 @@ export class WorkoutService {
       sessions,
       active: sessions.find((s) => s.state === 'active') ?? null,
       next,
+      savedNext:
+        next &&
+        this.repo.preferences().plans[userId]?.programId === next.programId &&
+        this.repo.preferences().plans[userId]?.templateId === next.templateId
+          ? next
+          : null,
     };
   }
   summary(userId) {

@@ -24,7 +24,7 @@ const p = {
 function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'workout-integration-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-  const workout = new WorkoutService(new WorkoutRepository(dir, [user]));
+  const workout = new WorkoutService(new WorkoutRepository(dir, [user], { seed: false }));
   const exercise = workout.saveRecord('exercises', { name: 'Bench', defaults: p }, user);
   const program = workout.saveRecord(
     'programs',
@@ -164,11 +164,11 @@ test('Discord start/resume uses one durable DM, recovered session buttons log re
   });
   await createWorkoutHandler({
     ...f,
-    workout: new WorkoutService(new WorkoutRepository(f.workout.repo.directory)),
+    workout: new WorkoutService(new WorkoutRepository(f.workout.repo.directory, [], { seed: false })),
   }).handle(second);
   assert.ok(second.result.update, JSON.stringify(second.result));
   s = f.workout.repo.getSession(s.id); // original repository cache can be stale; read fresh process state below.
-  const restored = new WorkoutService(new WorkoutRepository(f.workout.repo.directory));
+  const restored = new WorkoutService(new WorkoutRepository(f.workout.repo.directory, [], { seed: false }));
   s = restored.active(user);
   assert.equal(s.exercises[0].sets[1].resistance.kind, 'pair');
   assert.equal(s.exercises[0].sets[1].resistance.value, 135);
@@ -188,7 +188,7 @@ test('Discord confirmations, stale messages/revisions, exact DM and user isolati
   s = f.workout.active(user);
   const guild = button(s, 'log', null, { inGuild: () => true, context: 0 });
   await h.handle(guild);
-  assert.match(guild.result.reply.content, /direct message/);
+  assert.match(guild.result.reply.content, /not configured/);
   const unauthorized = button(s, 'log', null, { user: { id: other } });
   await h.handle(unauthorized);
   assert.match(unauthorized.result.reply.content, /not allowed/);
@@ -217,7 +217,7 @@ test('Discord confirmations, stale messages/revisions, exact DM and user isolati
   await h.handle(old);
   assert.match(old.result.reply.content, /changed/);
 });
-test('Workout dispatch is separate from developer execution, definitions are bot-DM only, today plan detects stale edits', async (t) => {
+test('Workout dispatch is separate from developer execution, definitions support servers and bot DMs, today plan detects stale edits', async (t) => {
   const f = fixture(t),
     handler = makeHandler(f);
   const today = interaction({
@@ -425,7 +425,9 @@ test('DM edits, repeat, selection/addition, delete confirmation and progression 
   free = f.workout.active(user);
   const add = button(free, 'add');
   await h.handle(add);
-  assert.ok(add.result.update.components[0].toJSON().components[0].options.length);
+  const searchAdd=interaction({isModalSubmit:()=>true,customId:add.result.modal.custom_id,message:{id:'message'},fields:fields({search:'Bench'})});
+  await h.handle(searchAdd);
+  assert.ok(searchAdd.result.update.components[0].toJSON().components[0].options.length);
   const chosen = interaction({
     isStringSelectMenu: () => true,
     customId: cid(free, 'add-choice'),
@@ -471,4 +473,380 @@ test('concurrent Discord start requests cannot create competing active messages'
   await running;
   assert.equal(sends, 1);
   assert.equal(f.workout.repo.sessions().length, 1);
+});
+
+test('configured server workouts persist in the channel and reject other users and unconfigured servers', async (t) => {
+  const f = fixture(t),
+    guildId = '100000000000000010';
+  f.config.guildIds = [guildId];
+  const h = createWorkoutHandler(f);
+  let sent;
+  const channel = {
+    type: 0,
+    send: async (payload) => {
+      sent = payload;
+      return { id: 'server-message' };
+    },
+  };
+  const slash = interaction({
+    isChatInputCommand: () => true,
+    commandName: 'workout',
+    context: 0,
+    inGuild: () => true,
+    guildId,
+    channelId: 'server-channel',
+    channel,
+    options: { getSubcommand: () => 'start', getBoolean: () => false, getString: () => null },
+  });
+  await h.handle(slash);
+  assert.ok(sent);
+  let s = f.workout.active(user);
+  assert.equal(s.message.channelId, 'server-channel');
+  const modal = interaction({
+    isModalSubmit: () => true,
+    customId: cid(s, 'log'),
+    context: 0,
+    inGuild: () => true,
+    guildId,
+    channelId: 'server-channel',
+    channel,
+    message: { id: 'server-message' },
+    fields: fields({ reps: '10' }),
+  });
+  await h.handle(modal);
+  assert.ok(modal.result.update);
+  s = f.workout.active(user);
+  assert.equal(s.exercises[0].sets[0].reps, 10);
+  f.workout.savePreferences({ allowedUserIds: [user, other] });
+  const wrong = interaction({
+    isButton: () => true,
+    customId: cid(s, 'repeat'),
+    context: 0,
+    inGuild: () => true,
+    guildId,
+    channelId: 'server-channel',
+    channel,
+    message: { id: 'server-message' },
+    user: { id: other },
+  });
+  await h.handle(wrong);
+  assert.match(wrong.result.reply.content, /another user/);
+  assert.equal(f.workout.active(user).exercises[0].sets.length, 1);
+  const unauthorized = interaction({
+    isButton: () => true,
+    customId: cid(s, 'repeat'),
+    context: 0,
+    inGuild: () => true,
+    guildId: '100000000000000099',
+    channelId: 'server-channel',
+    channel,
+    message: { id: 'server-message' },
+  });
+  await h.handle(unauthorized);
+  assert.match(unauthorized.result.reply.content, /not configured/);
+  const crossChannel = interaction({
+    isButton: () => true,
+    customId: cid(s, 'repeat'),
+    context: 0,
+    inGuild: () => true,
+    guildId,
+    channelId: 'different-channel',
+    channel,
+    message: { id: 'server-message' },
+  });
+  await h.handle(crossChannel);
+  assert.match(crossChannel.result.reply.content, /stale/);
+  assert.equal(workoutDefinition({ guild: true }).contexts, undefined);
+});
+
+const todayInteraction = () =>
+  interaction({
+    isChatInputCommand: () => true,
+    commandName: 'workout',
+    options: {
+      getSubcommand: () => 'today',
+      getString: () => {
+        throw new Error('UUID inputs must not be read');
+      },
+    },
+  });
+const menuOf = (payload) => payload.components[0].toJSON().components[0];
+const chooseOption = (menu, value, overrides = {}) =>
+  interaction({
+    isStringSelectMenu: () => true,
+    customId: menu.custom_id,
+    values: [value],
+    message: { id: 'selection-message' },
+    ...overrides,
+  });
+function severalTemplates(f) {
+  return f.workout.saveRecord(
+    'programs',
+    {
+      ...f.program,
+      templates: [
+        f.program.templates[0],
+        { name: 'Strength B', exercises: [{ exerciseId: f.exercise.id, ...p }] },
+      ],
+    },
+    user,
+    f.program.revision,
+  );
+}
+function secondProgram(f) {
+  return f.workout.saveRecord(
+    'programs',
+    {
+      name: 'Second Program',
+      templates: [{ name: 'Second Workout', exercises: [{ exerciseId: f.exercise.id, ...p }] }],
+    },
+    user,
+  );
+}
+test('no active programs gives actionable guidance without creating a session', async (t) => {
+  const f = fixture(t);
+  f.workout.saveRecord('programs', { ...f.program, active: false }, user, f.program.revision);
+  const i = todayInteraction();
+  await createWorkoutHandler(f).handle(i);
+  assert.match(i.result.reply.content, /Create or activate.*Workout → Programs/);
+  assert.equal(f.workout.active(user), null);
+});
+test('one program/one template resolves automatically, preview has human names and raw slash ID options are absent', async (t) => {
+  const f = fixture(t),
+    i = todayInteraction();
+  await createWorkoutHandler(f).handle(i);
+  assert.equal(i.result.reply.embeds[0].toJSON().title, 'Push A');
+  assert.match(i.result.reply.embeds[0].toJSON().description, /Program/);
+  assert.equal(
+    i.result.reply.components[0].toJSON().components[1].label,
+    'Choose Different Workout',
+  );
+  assert.equal(f.workout.repo.preferences().plans[user].templateId, f.program.templates[0].id);
+  const definition = workoutDefinition();
+  assert.equal(definition.options.find((o) => o.name === 'today').options?.length ?? 0, 0);
+  assert.deepEqual(
+    definition.options.find((o) => o.name === 'start').options.map((o) => o.name),
+    ['free'],
+  );
+});
+test('one program/several templates prompts a named template menu and persists the chosen next workout', async (t) => {
+  const f = fixture(t),
+    program = severalTemplates(f),
+    h = createWorkoutHandler(f),
+    i = todayInteraction();
+  await h.handle(i);
+  const menu = menuOf(i.result.reply);
+  assert.deepEqual(
+    menu.options.map((o) => o.label),
+    ['Push A', 'Strength B'],
+  );
+  const select = chooseOption(menu, program.templates[1].id);
+  await h.handle(select);
+  assert.equal(select.result.update.embeds[0].toJSON().title, 'Strength B');
+  const saved = todayInteraction();
+  await h.handle(saved);
+  assert.equal(saved.result.reply.embeds[0].toJSON().title, 'Strength B');
+  assert.equal(f.workout.active(user), null);
+});
+test('multiple programs prompt program then template menus; Choose Different ignores saved selection without changing active history', async (t) => {
+  const f = fixture(t),
+    program = severalTemplates(f);
+  secondProgram(f);
+  const h = createWorkoutHandler(f),
+    i = todayInteraction();
+  await h.handle(i);
+  const programs = menuOf(i.result.reply);
+  assert.deepEqual(
+    programs.options.map((o) => o.label),
+    ['Program', 'Second Program'],
+  );
+  const pickedProgram = chooseOption(programs, program.id);
+  await h.handle(pickedProgram);
+  const templates = menuOf(pickedProgram.result.update);
+  assert.deepEqual(
+    templates.options.map((o) => o.label),
+    ['Push A', 'Strength B'],
+  );
+  const pickedTemplate = chooseOption(templates, program.templates[1].id);
+  await h.handle(pickedTemplate);
+  assert.equal(pickedTemplate.result.update.embeds[0].toJSON().title, 'Strength B');
+  const active = f.workout.start(user, { free: true });
+  const before = structuredClone(f.workout.repo.sessions());
+  const different = interaction({
+    isButton: () => true,
+    customId: pickedTemplate.result.update.components[0].toJSON().components[1].custom_id,
+    message: { id: 'selection-message' },
+  });
+  await h.handle(different);
+  assert.equal(menuOf(different.result.update).options.length, 2);
+  assert.deepEqual(f.workout.repo.sessions(), before);
+  assert.equal(f.workout.active(user).id, active.id);
+});
+test('stale selection menus and removed-template previews reject changes; selection is isolated by user and channel', async (t) => {
+  const f = fixture(t),
+    program = severalTemplates(f),
+    h = createWorkoutHandler(f),
+    i = todayInteraction();
+  await h.handle(i);
+  const menu = menuOf(i.result.reply);
+  f.workout.savePreferences({ allowedUserIds: [user, other] });
+  const wrong = chooseOption(menu, program.templates[0].id, { user: { id: other } });
+  await h.handle(wrong);
+  assert.match(wrong.result.reply.content, /another user/);
+  const wrongChannel = chooseOption(menu, program.templates[0].id, { channelId: 'another' });
+  await h.handle(wrongChannel);
+  assert.match(wrongChannel.result.reply.content, /another user or channel/);
+  f.workout.saveRecord('programs', { ...program, name: 'Edited' }, user, program.revision);
+  const stale = chooseOption(menu, program.templates[0].id);
+  await h.handle(stale);
+  assert.match(stale.result.reply.content, /Plan changed.*review again/);
+  const fresh = todayInteraction();
+  await h.handle(fresh);
+  const chosen = chooseOption(menuOf(fresh.result.reply), program.templates[1].id);
+  await h.handle(chosen);
+  const startId = chosen.result.update.components[0].toJSON().components[0].custom_id;
+  const current = f.workout.owned('programs', program.id, user);
+  f.workout.saveRecord(
+    'programs',
+    { ...current, templates: [current.templates[0]] },
+    user,
+    current.revision,
+  );
+  const start = interaction({
+    isButton: () => true,
+    customId: startId,
+    message: { id: 'selection-message' },
+  });
+  await h.handle(start);
+  assert.match(start.result.reply.content, /Plan changed/);
+  assert.equal(f.workout.active(user), null);
+});
+test('preview Start resumes existing active session, and free start bypasses ambiguous programs without replacing active work', async (t) => {
+  const f = fixture(t),
+    h = createWorkoutHandler(f),
+    i = todayInteraction();
+  await h.handle(i);
+  const preview = i.result.reply;
+  secondProgram(f);
+  const channel = {
+    type: 1,
+    send: async () => ({ id: 'active-message' }),
+    messages: {
+      fetch: async () => ({ id: 'active-message', author: { id: 'bot' }, edit: async () => {} }),
+    },
+  };
+  const free = interaction({
+    isChatInputCommand: () => true,
+    commandName: 'workout',
+    channel,
+    options: {
+      getSubcommand: () => 'start',
+      getBoolean: () => true,
+      getString: () => {
+        throw new Error('No UUID typing');
+      },
+    },
+  });
+  await h.handle(free);
+  const active = f.workout.active(user);
+  assert.equal(active.mode, 'free');
+  const start = interaction({
+    isButton: () => true,
+    customId: preview.components[0].toJSON().components[0].custom_id,
+    message: { id: 'selection-message' },
+    channel,
+  });
+  await h.handle(start);
+  assert.ok(start.result.edit);
+  assert.equal(f.workout.active(user).id, active.id);
+  assert.equal(f.workout.repo.sessions().length, 1);
+});
+test('planned start uses named selection when ambiguous, and stale saved preferences recover by asking again', async (t) => {
+  const f = fixture(t),
+    program = severalTemplates(f),
+    h = createWorkoutHandler(f);
+  f.workout.setNext(user, program.id, program.templates[1].id, program.revision);
+  f.workout.saveRecord(
+    'programs',
+    {
+      ...program,
+      templates: [
+        { ...program.templates[0] },
+        { name: 'New workout', exercises: [{ exerciseId: f.exercise.id, ...p }] },
+      ],
+    },
+    user,
+    program.revision,
+  );
+  const i = interaction({
+    isChatInputCommand: () => true,
+    commandName: 'workout',
+    options: {
+      getSubcommand: () => 'start',
+      getBoolean: () => false,
+      getString: () => {
+        throw new Error('No UUID options');
+      },
+    },
+  });
+  await h.handle(i);
+  assert.equal(menuOf(i.result.reply).type, 3);
+  assert.equal(f.workout.active(user), null);
+  assert.equal(f.workout.state(user).savedNext, null);
+});
+
+test('named selection paginates beyond Discord’s 25-option limit and changing next preserves the active session', async (t) => {
+  const f = fixture(t);
+  for (let n = 0; n < 25; n++)
+    f.workout.saveRecord(
+      'programs',
+      {
+        name: 'Program ' + n,
+        templates: [{ name: 'Workout ' + n, exercises: [{ exerciseId: f.exercise.id, ...p }] }],
+      },
+      user,
+    );
+  const h = createWorkoutHandler(f),
+    i = todayInteraction();
+  await h.handle(i);
+  assert.equal(menuOf(i.result.reply).options.length, 25);
+  const more = i.result.reply.components[1].toJSON().components[1];
+  const page = interaction({
+    isButton: () => true,
+    customId: more.custom_id,
+    message: { id: 'selection-message' },
+  });
+  await h.handle(page);
+  const last = menuOf(page.result.update);
+  assert.equal(last.options.length, 1);
+  const active = f.workout.start(user, { free: true }),
+    before = structuredClone(f.workout.repo.sessions());
+  const select = chooseOption(last, last.options[0].value);
+  await h.handle(select);
+  assert.equal(select.result.update.embeds[0].toJSON().title, 'Workout 24');
+  assert.deepEqual(f.workout.repo.sessions(), before);
+  assert.equal(f.workout.active(user).id, active.id);
+  const replay = chooseOption(last, last.options[0].value);
+  await h.handle(replay);
+  assert.match(replay.result.reply.content, /expired/);
+});
+
+test('large starter library Add Exercise searches aliases in a modal, supports no matches and logs normally', async t => {
+ const f=fixture(t); f.workout.repo.seedEnabled=true; f.workout.repo.seedStarters(user);
+ const h=createWorkoutHandler(f);
+ let s=f.workout.start(user,{free:true,requestId:randomUUID()});
+ f.workout.bindMessage(user,s.id,{channelId:'dm',messageId:'message'}); s=f.workout.active(user);
+ const add=button(s,'add'); await h.handle(add); assert.equal(add.result.modal.title,'Find an exercise');
+ const search=interaction({isModalSubmit:()=>true,customId:add.result.modal.custom_id,message:{id:'message'},fields:fields({search:'BW squat'})});
+ await h.handle(search);
+ const menu=search.result.update.components[0].toJSON().components[0];
+ assert.equal(menu.options.length,1); assert.equal(menu.options[0].label,'Bodyweight Squat');
+ assert.ok(menu.options.length<=25);
+ const pick=interaction({isStringSelectMenu:()=>true,customId:menu.custom_id,message:{id:'message'},values:[menu.options[0].value]});
+ await h.handle(pick); s=f.workout.active(user); assert.equal(s.exercises.length,1); assert.equal(s.exercises[0].name,'Bodyweight Squat');
+ const log=button(s,'log'); await h.handle(log); assert.equal(log.result.modal.components.length,1);
+ const empty=interaction({isModalSubmit:()=>true,customId:cid(s,'add-search'),message:{id:'message'},fields:fields({search:'no such exercise xyz'})});
+ await h.handle(empty); assert.match(empty.result.update.content,/No matching/);
+ const stale=interaction({isModalSubmit:()=>true,customId:add.result.modal.custom_id,message:{id:'message'},fields:fields({search:'bench'})});
+ await h.handle(stale); assert.match(stale.result.reply.content,/changed|stale/i);
 });

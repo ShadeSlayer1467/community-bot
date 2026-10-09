@@ -24,7 +24,7 @@ function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'community-workout-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   let now = Date.parse('2026-10-09T10:00:00Z');
-  const repo = new WorkoutRepository(dir, [user]),
+  const repo = new WorkoutRepository(dir, [user], { seed: false }),
     service = new WorkoutService(repo, { now: () => now });
   const exercise = service.saveRecord(
     'exercises',
@@ -151,7 +151,7 @@ test('planned snapshot survives program edits, restart, load carry-forward and d
     user,
     f.program.revision,
   );
-  const restarted = new WorkoutService(new WorkoutRepository(f.dir, [user]));
+  const restarted = new WorkoutService(new WorkoutRepository(f.dir, [user], { seed: false }));
   const recovered = restarted.active(user);
   assert.deepEqual(recovered.exercises[0].planned, initial);
   assert.equal(recovered.exercises[0].workingResistance.value, 205);
@@ -251,7 +251,7 @@ test('completion persists, previous performance stays distinct, archived histori
   assert.equal(free.recommendations[0].outcome, 'MAINTAIN');
   assert.match(free.recommendations[0].reason, /Free workout/);
   f.service.saveRecord('exercises', { ...f.exercise, active: false }, user, f.exercise.revision);
-  const restarted = new WorkoutService(new WorkoutRepository(f.dir));
+  const restarted = new WorkoutService(new WorkoutRepository(f.dir, [], { seed: false }));
   assert.deepEqual(restarted.session(saved.id, user), saved);
   assert.throws(() => restarted.start(user, { programId: f.program.id }), /archived/);
   assert.equal(restarted.previous(user, 'other-variation'), null);
@@ -484,7 +484,7 @@ test('ordered chains save and preserve active session progression context; schem
   // Simulate a crash after durable intent, before writes. Restart replays the whole transaction.
   const prefs = { ...f.repo.preferences(), unit: 'kg' };
   f.repo.journal.save({ writes: [{ key: 'preferences', value: prefs }] });
-  const restored = new WorkoutRepository(f.dir);
+  const restored = new WorkoutRepository(f.dir, [], { seed: false });
   assert.equal(restored.preferences().unit, 'kg');
   assert.equal(restored.journal.read(), null);
   assert.throws(() => restored.getSession('../escape'), /Invalid/);
@@ -492,7 +492,7 @@ test('ordered chains save and preserve active session progression context; schem
     path.join(f.dir, 'exercises.json'),
     JSON.stringify({ version: 999, records: [] }),
   );
-  assert.throws(() => new WorkoutRepository(f.dir), /schema/);
+  assert.throws(() => new WorkoutRepository(f.dir, [], { seed: false }), /schema/);
 });
 
 test('history uncertainty at exercise/session scope suppresses progress and current prescription changes require manual review', (t) => {
@@ -571,7 +571,7 @@ test('multi-file progression recovery completes a partially applied journal tran
   };
   f.repo.journal.save(journal);
   f.repo.stores.get('programs').save(journal.writes[0].value);
-  const recovered = new WorkoutRepository(f.dir);
+  const recovered = new WorkoutRepository(f.dir, [], { seed: false });
   assert.equal(recovered.records('programs')[0].revision, 1);
   assert.equal(recovered.getSession(s.id).decisions[0].id, 'recovered-decision');
   assert.equal(recovered.journal.read(), null);

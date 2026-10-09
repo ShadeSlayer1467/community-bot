@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Store } from '../persistence.js';
+import { starterCatalog, starterExercise, normalizeExercise } from './starter.js';
 import {
   envelope,
   validateRecords,
@@ -12,7 +13,8 @@ import {
 } from './model.js';
 const validId = (id) => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,60}$/.test(id);
 export class WorkoutRepository {
-  constructor(directory, ownerIds = []) {
+  constructor(directory, ownerIds = [], { seed = true } = {}) {
+    this.seedEnabled = seed;
     this.directory = directory;
     this.stores = new Map();
     this.stores.set(
@@ -39,7 +41,39 @@ export class WorkoutRepository {
       if (!fs.existsSync(store.file)) store.save(store.read());
     fs.mkdirSync(path.join(directory, 'sessions'), { recursive: true });
     this.journal = new Store(path.join(directory, 'transaction.json'), null);
+    this.stores.set('starter-seeds', new Store(path.join(directory, 'starter-seeds.json'), { version: 1, users: {} }, value => {
+      if (value?.version !== 1 || !value.users || typeof value.users !== 'object' || Array.isArray(value.users) ||
+        Object.values(value.users).some(keys => !Array.isArray(keys) || keys.some(key => typeof key !== 'string')))
+        throw new Error('Invalid starter seed ledger.');
+      return value;
+    }));
     this.recover();
+    if (seed) for (const userId of this.preferences().allowedUserIds) this.seedStarters(userId);
+  }
+  seedStarters(userId) {
+    if (!this.seedEnabled) return;
+    this.recover();
+    const ledger = this.stores.get('starter-seeds').read();
+    const processed = new Set(ledger.users[userId] ?? []);
+    const records = this.records('exercises');
+    let changed = false;
+    const unit = this.preferences().unit;
+    for (const entry of starterCatalog.exercises) {
+      const key = normalizeExercise(entry.name);
+      if (processed.has(key)) continue;
+      // Exact base names/aliases only: machine settings and distinct variations keep their identity.
+      const names = [entry.name, ...entry.aliases].map(normalizeExercise);
+      if (!records.some(e => e.userId === userId && !e.variation &&
+        [e.name, ...e.aliases].some(name => names.includes(normalizeExercise(name)))))
+        records.push(starterExercise(entry, userId, unit));
+      processed.add(key);
+      changed = true;
+    }
+    if (changed) {
+      ledger.users[userId] = [...processed];
+      ledger.catalogVersion = starterCatalog.version;
+      this.commit([{ key: 'exercises', value: envelope(records) }, { key: 'starter-seeds', value: ledger }]);
+    }
   }
   sessionStore(id, initial) {
     if (!validId(id)) throw new Error('Invalid Workout session identifier.');

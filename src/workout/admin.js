@@ -13,6 +13,8 @@ export function workoutAdmin(workout, config, url, body) {
       return workout.saveRecord('chains', body.record, userId, body.expectedRevision);
     case '/api/workout/preferences':
       return workout.savePreferences(body.preferences);
+    case '/api/workout/next':
+      return workout.setNext(userId, body.programId, body.templateId, body.expectedRevision);
     case '/api/workout/start':
       return workout.start(userId, body);
     case '/api/workout/confirm':
@@ -33,6 +35,7 @@ export const workoutPostRoutes = [
   'programs',
   'chains',
   'preferences',
+  'next',
   'start',
   'confirm',
   'action',
