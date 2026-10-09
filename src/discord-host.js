@@ -1,3 +1,4 @@
+import { workoutDefinition } from './workout/discord.js';
 import { Client, GatewayIntentBits, Events, Routes, Partials } from 'discord.js';
 import { once } from 'node:events';
 import { connectionIssues, snowflake } from './config.js';
@@ -98,7 +99,10 @@ export class DiscordHost {
         this.registered.push({ guildId, commands: result.map((c) => c.name) });
       }
       // Upsert only our DM commands; do not wipe unrelated global commands.
-      const dmCommands = developerDefinitions(this.settings.read());
+      const dmCommands = [
+        ...developerDefinitions(this.settings.read()),
+        ...(!this.settings.read().disabled.includes('workout') ? [workoutDefinition()] : []),
+      ];
       const existing = await this.client.rest.get(
         Routes.applicationCommands(this.config.applicationId),
       );
@@ -112,8 +116,14 @@ export class DiscordHost {
             Routes.applicationCommand(this.config.applicationId, command.id),
           );
       }
+      if (this.settings.read().disabled.includes('workout')) {
+        for (const command of existing.filter((c) => c.name === 'workout'))
+          await this.client.rest.delete(
+            Routes.applicationCommand(this.config.applicationId, command.id),
+          );
+      }
       this.registered.push({ scope: 'bot DM', commands: dmCommands.map((c) => c.name) });
-      this.logger.log('info', 'Guild and DM developer commands synchronized');
+      this.logger.log('info', 'Guild and bot DM commands synchronized');
       return await this.refreshRegistered();
     } finally {
       this.syncing = false;
@@ -126,7 +136,10 @@ export class DiscordHost {
       const commands = await this.client.rest.get(
         Routes.applicationGuildCommands(this.config.applicationId, guildId),
       );
-      result.push({ guildId, commands: commands.map((c) => ({ id: c.id, name: c.name, type: c.type })) });
+      result.push({
+        guildId,
+        commands: commands.map((c) => ({ id: c.id, name: c.name, type: c.type })),
+      });
     }
     const global = await this.client.rest.get(
       Routes.applicationCommands(this.config.applicationId),
@@ -140,23 +153,35 @@ export class DiscordHost {
   }
   async removeRegistered({ commandId, guildId = null }) {
     if (!this.client.isReady()) throw new Error('Connect the bot first.');
-    if (!snowflake(commandId) || (guildId !== null && (!snowflake(guildId) || !this.config.guildIds.includes(guildId))))
+    if (
+      !snowflake(commandId) ||
+      (guildId !== null && (!snowflake(guildId) || !this.config.guildIds.includes(guildId)))
+    )
       throw new Error('Invalid command ID or unconfigured server.');
     if (this.syncing) throw new Error('Wait for the current command update to finish.');
     this.syncing = true;
     try {
       const groups = await this.refreshRegistered();
-      const group = groups.find(g => guildId === null ? g.scope === 'global' : g.guildId === guildId);
-      const command = group?.commands.find(c => c.id === commandId);
+      const group = groups.find((g) =>
+        guildId === null ? g.scope === 'global' : g.guildId === guildId,
+      );
+      const command = group?.commands.find((c) => c.id === commandId);
       if (!command) throw new Error('Command no longer exists in this scope. Refresh the list.');
-      const route = guildId === null
-        ? Routes.applicationCommand(this.config.applicationId, commandId)
-        : Routes.applicationGuildCommand(this.config.applicationId, guildId, commandId);
+      const route =
+        guildId === null
+          ? Routes.applicationCommand(this.config.applicationId, commandId)
+          : Routes.applicationGuildCommand(this.config.applicationId, guildId, commandId);
       await this.client.rest.delete(route);
-      group.commands = group.commands.filter(c => c.id !== commandId);
-      this.logger.log('info', 'Discord command registration removed', { name: command.name, commandId, guildId });
+      group.commands = group.commands.filter((c) => c.id !== commandId);
+      this.logger.log('info', 'Discord command registration removed', {
+        name: command.name,
+        commandId,
+        guildId,
+      });
       return this.registered;
-    } finally { this.syncing = false; }
+    } finally {
+      this.syncing = false;
+    }
   }
   status() {
     return {

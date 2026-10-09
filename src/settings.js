@@ -16,6 +16,7 @@ export const builtinNames = [
   'kick',
   'ban',
   'customcommand',
+  'workout',
 ];
 export const defaults = {
   disabled: ['ask'],

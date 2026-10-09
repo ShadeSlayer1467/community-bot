@@ -1,5 +1,11 @@
 # Verification
 
+## Workout and modular admin update
+
+Final offline run: `npm run check` passed with **65 JavaScript modules checked and all 86 tests passing**, no skips or failures. The expanded headless Edge smoke passed with no page errors, including every Workout subpage at 390px width. JavaScript and compiled C# notification-client smoke tests also passed against the local HTTP endpoint with stub delivery. `git diff --check` passed. Verification used the bundled Node 24 runtime because the default terminal runtime is Node 18.
+
+Workout offline coverage includes program/exercise editing, ordering and user isolation, planned/free sessions, actual-load carry-forward, edits/confirmed deletion, completion, uncertainty, weighted/variation-chain progression, explicit decisions, preserved historical data, restart recovery and multi-file journal recovery. Discord handlers and global DM-only registration use stub interactions. Authenticated module APIs/subroutes retain login/CSRF/Origin controls. The expanded Edge browser smoke exercises the real Workout editors, session logging/corrections, progression acceptance, history timeline, deep refresh and all subpages at mobile width, alongside Notifications and TOTP/CustomCommand administration. The phone live checklist is in [WORKOUT.md](WORKOUT.md#phone-live-checklist). No production credentials, real workout records or live Discord messages were used.
+
 ## Notification bridge update
 
 Agent Channels update: automatic per-source creation/reuse, restart recovery, deleted/moved channels, slug collisions, category permissions and limits are covered by targeted tests. Existing DM history is not modified by channel setup.

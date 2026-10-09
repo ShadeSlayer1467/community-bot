@@ -1,3 +1,5 @@
+import { WorkoutRepository } from './workout/repository.js';
+import { WorkoutService } from './workout/service.js';
 import path from 'node:path';
 import { loadConfig, root } from './config.js';
 import { Store } from './persistence.js';
@@ -34,7 +36,19 @@ async function main() {
   const feedback = new Store(path.join(root, 'data', 'feedback.json'), []);
   const runner = new CustomRunner(logger.log, security);
   security.onRevoke = () => runner.cancel?.();
-  const host = new DiscordHost({ config, settings, tasks, feedback, logger, runner, security });
+  const workout = new WorkoutService(
+    new WorkoutRepository(path.join(root, 'data', 'workout'), config.ownerIds),
+  );
+  const host = new DiscordHost({
+    config,
+    settings,
+    tasks,
+    feedback,
+    logger,
+    runner,
+    security,
+    workout,
+  });
   const notifications = new NotificationService({
     settings: new Store(
       path.join(root, 'data', 'notifications.json'),
@@ -50,7 +64,16 @@ async function main() {
     ),
     logger,
   });
-  const server = createAdmin({ config, settings, host, logger, runner, security, notifications });
+  const server = createAdmin({
+    config,
+    settings,
+    host,
+    logger,
+    runner,
+    security,
+    notifications,
+    workout,
+  });
   server.on('error', (e) => {
     logger.log(
       'error',

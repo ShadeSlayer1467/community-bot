@@ -4,13 +4,13 @@
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-81e2ba)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows)](https://www.microsoft.com/windows)
 
-A local-first Discord bot with a polished browser control room, practical community commands, secure owner-only extensions, and a notification bridge for other applications.
+A local-first Discord bot with a modular browser admin application, practical community commands, secure owner-only extensions, and a notification bridge for other applications.
 
 The admin panel binds to `127.0.0.1` only. Discord credentials, administrator passwords, authenticator data, runtime state, and notification credentials stay in ignored local files.
 
 ## Highlights
 
-- **One control room:** connect, configure commands, manage access, inspect activity, and sync Discord registrations.
+- **One admin application:** Home, Notifications, Commands, CustomCommand, Logs and global Settings share a persistent shell. Workout adds programs, fast DM set logging, progression and history; Kingshot remains a future-module placeholder. See [Workout setup](docs/WORKOUT.md). See [admin architecture](docs/ADMIN_APPLICATION.md).
 - **Useful built-ins:** utilities, community tools, tasks, moderation, optional AI, and editable response commands.
 - **Secure developer mode:** exact-owner checks, bot-DM-only commands, TOTP, short-lived elevation, and hot-reloaded local JavaScript.
 - **Local notification bridge:** send safe, bounded updates from JavaScript, C#, or another local application to a saved Discord destination.

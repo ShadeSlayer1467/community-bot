@@ -1,15 +1,12 @@
+import { initWorkout } from './modules/workout-controls.js';
+import { initCommands } from './modules/command-controls.js';
+import { initCustomCommand } from './modules/custom-controls.js';
+import { initNotifications } from './modules/notification-controls.js';
+import { mountShell, showPage, renderDashboard } from './shell.js';
+await mountShell();
 const $ = (id) => document.getElementById(id);
 let csrf = '',
   current;
-let enrollmentTimer;
-function clearEnrollment() {
-  clearTimeout(enrollmentTimer);
-  $('enrollment').hidden = true;
-  $('enrollmentQr').removeAttribute('src');
-  $('enrollmentUri').textContent = '';
-  $('enrollCode').value = '';
-  $('enrollPassword').value = '';
-}
 let toastTimer;
 const toast = (text, kind = 'success') => {
   clearTimeout(toastTimer);
@@ -53,10 +50,12 @@ async function api(route, body) {
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   const data = await response.json();
+  if (response.status === 401 && route !== 'login') lockPanel();
   if (!response.ok) throw new Error(data.error || 'Request failed.');
   return data;
 }
 function renderStatus(data) {
+  renderDashboard(data);
   renderNotifications(data.notifications);
   const s = data.status;
   $('connection').textContent = s.state.toUpperCase();
@@ -121,87 +120,24 @@ function renderStatus(data) {
     .map((l) => `${l.time} [${l.level}] ${l.message} ${l.details}`)
     .join('\n');
 }
-function field(labelText, value, type = 'text') {
-  const label = document.createElement('label');
-  label.textContent = labelText;
-  const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-  if (type !== 'textarea') input.type = type;
-  input.value = value;
-  label.append(input);
-  return { label, input };
-}
-function responseRow(c) {
-  const box = document.createElement('div');
-  box.className = 'response';
-  const row = document.createElement('div');
-  row.className = 'row';
-  const name = field('Command name', c.name),
-    description = field('Description', c.description),
-    text = field('Response', c.text, 'textarea');
-  name.input.required = true;
-  name.input.maxLength = 32;
-  description.input.required = true;
-  description.input.maxLength = 100;
-  text.input.required = true;
-  text.input.maxLength = 1800;
-  const accessLabel = document.createElement('label');
-  accessLabel.textContent = 'Who can use it';
-  const access = document.createElement('select');
-  for (const value of ['everyone', 'moderator', 'owner']) {
-    const o = document.createElement('option');
-    o.value = value;
-    o.textContent = value;
-    access.append(o);
-  }
-  access.value = c.access;
-  accessLabel.append(access);
-  row.append(name.label, description.label, accessLabel);
-  const enabled = document.createElement('input');
-  enabled.type = 'checkbox';
-  enabled.checked = c.enabled;
-  const toggle = document.createElement('label');
-  toggle.append(enabled, 'Enabled');
-  const remove = document.createElement('button');
-  remove.type = 'button';
-  remove.className = 'quiet';
-  remove.textContent = 'Remove command';
-  remove.onclick = () => {
-    box.remove();
-    notice('Response removed from the form. Save settings to apply.');
-  };
-  box.append(row, text.label, toggle, remove);
-  box.read = () => ({
-    name: name.input.value.trim(),
-    description: description.input.value.trim(),
-    text: text.input.value,
-    enabled: enabled.checked,
-    access: access.value,
-  });
-  $('responses').append(box);
-}
 async function load(full = false) {
   const data = await api('state');
   renderStatus(data);
   if (!full) return;
   fillNotifications(data.notifications?.settings);
   current = data.settings;
-  $('builtins').replaceChildren(
-    ...data.builtinNames.map((name) => {
-      const label = document.createElement('label');
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.value = name;
-      input.checked = !current.disabled.includes(name);
-      label.append(input, `/${name}`);
-      return label;
-    }),
-  );
-  $('responses').replaceChildren();
-  current.responses.forEach(responseRow);
-  for (const key of ['moderatorUserIds', 'moderatorRoleIds'])
-    $(key).value = current[key].join('\n');
+  fillCommands(data);
   $('timeout').value = current.customTimeoutSeconds;
 }
+initWorkout({ $, api, notice, load });
+const { fillCommands } = initCommands({ $, notice, saveModuleSettings });
+const { clearEnrollment } = initCustomCommand({ $, api, load, notice });
+const { clearNotificationCredential, fillNotifications, renderNotifications } = initNotifications({
+  $,
+  api,
+  load,
+  notice,
+});
 $('loginForm').onsubmit = async (e) => {
   e.preventDefault();
   try {
@@ -209,6 +145,9 @@ $('loginForm').onsubmit = async (e) => {
     csrf = result.csrf;
     $('password').value = '';
     await load(true);
+    const next = new URLSearchParams(location.search).get('next');
+    if (next && /^\/[a-z/-]+$/.test(next)) history.replaceState({}, '', next);
+    showPage();
     $('login').hidden = true;
     $('dashboard').hidden = false;
     notice('Panel unlocked.');
@@ -216,39 +155,26 @@ $('loginForm').onsubmit = async (e) => {
     notice(e.message, 'error');
   }
 };
-$('settingsForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const ids = (key) =>
-    $(key)
-      .value.split(/[\s,]+/)
-      .filter(Boolean);
-  try {
-    await api('settings', {
-      disabled: [...$('builtins').querySelectorAll('input')]
-        .filter((i) => !i.checked)
-        .map((i) => i.value),
-      responses: [...$('responses').children].map((row) => row.read()),
-      moderatorUserIds: ids('moderatorUserIds'),
-      moderatorRoleIds: ids('moderatorRoleIds'),
-      customTimeoutSeconds: Number($('timeout').value),
-    });
-    notice(
-      'Saved. Command checks changed immediately. Sync commands to update Discord’s command list.',
-    );
-    await load();
-  } catch (e) {
-    notice(e.message, 'error');
-  }
-};
-$('addResponse').onclick = () => {
-  responseRow({ name: '', description: '', text: '', enabled: true, access: 'everyone' });
-  notice('Response added to the form. Fill it in, then save settings.');
-};
+function saveModuleSettings(formId, readPatch) {
+  $(formId).onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      current = await api('settings', { ...current, ...readPatch() });
+      await load();
+      notice(
+        'Saved. Command checks changed immediately. Sync commands to update Discord’s command list.',
+      );
+    } catch (e) {
+      notice(e.message, 'error');
+    }
+  };
+}
+saveModuleSettings('customForm', () => ({ customTimeoutSeconds: Number($('timeout').value) }));
 for (const button of document.querySelectorAll('[data-action]'))
   button.onclick = async () => {
     button.disabled = true;
     try {
-      await api(button.dataset.action, {});
+      if (button.dataset.action !== 'refresh-state') await api(button.dataset.action, {});
       await load();
       notice(`${button.textContent}: complete.`);
     } catch (e) {
@@ -273,168 +199,45 @@ $('logout').onclick = async () => {
     notice('Signed out.');
   }
 };
-$('startEnrollment').onclick = async () => {
-  const password = $('enrollPassword').value;
-  clearEnrollment();
-  try {
-    const enrollment = await api('totp/start', { password });
-    $('enrollmentQr').src = enrollment.qr;
-    $('enrollmentUri').textContent = enrollment.uri;
-    $('enrollment').hidden = false;
-    enrollmentTimer = setTimeout(clearEnrollment, Math.max(0, enrollment.expiresAt - Date.now()));
-    notice('Scan the local QR code, then confirm enrollment. Do not share the QR code or URI.');
-  } catch (e) {
-    notice(e.message, 'error');
-  }
-};
-$('confirmEnrollment').onclick = async () => {
-  const code = $('enrollCode').value;
-  $('enrollCode').value = '';
-  try {
-    await api('totp/confirm', { code });
-    clearEnrollment();
-    await load();
-    notice(
-      'Authenticator enrolled. Wait for a fresh code, then use /owner-auth in a DM with the bot.',
-    );
-  } catch (e) {
-    notice(e.message, 'error');
-  }
-};
-$('revokeElevation').onclick = async () => {
-  try {
-    await api('totp/revoke', {});
-    await load();
-    notice('Developer session revoked.');
-  } catch (e) {
-    notice(e.message, 'error');
-  }
-};
 
-let notificationSecretTimer;
-function clearNotificationCredential() {
-  clearTimeout(notificationSecretTimer);
-  $('notifySecret').value = '';
-  $('notifySecretBox').hidden = true;
+function lockPanel() {
+  clearEnrollment();
+  clearNotificationCredential();
+  csrf = '';
+  $('dashboard').hidden = true;
+  $('login').hidden = false;
 }
-function notificationMode() {
-  $('notifyGuildFields').hidden = $('notifyMode').value === 'dm';
-  $('notifyChannelField').hidden = $('notifyMode').value !== 'guild';
-  $('notifyAgentFields').hidden = $('notifyMode').value !== 'agents';
-  $('notifyDmFields').hidden = $('notifyMode').value !== 'dm';
-}
-function fillNotifications(s) {
-  if (!s) return;
-  $('notifyEnabled').checked = s.enabled;
-  for (const [id, key] of [
-    ['notifyMode', 'mode'],
-    ['notifyGuild', 'guildId'],
-    ['notifyChannel', 'channelId'],
-    ['notifyCategory', 'categoryId'],
-    ['notifyUser', 'userId'],
-    ['notifyRate', 'perMinute'],
-    ['notifyQueue', 'queueLimit'],
-    ['notifyDedup', 'dedupSeconds'],
-  ])
-    $(id).value = s[key] ?? '';
-  notificationMode();
-}
-function renderNotifications(n) {
-  if (!n) return;
-  $('notifyAgents').textContent =
-    (n.agents || []).map((a) => `${a.source} → #${a.channelName} (${a.channelId})`).join('\n') ||
-    'Channels appear automatically when each agent first sends a notification.';
-  $('notifyCredentialState').textContent = n.credential.configured
-    ? `Credential configured; last rotated ${n.credential.rotatedAt}. Existing credential cannot be displayed.`
-    : 'No credential generated yet.';
-  $('notifyDestination').textContent =
-    `${n.destination.status}: ${n.destination.label}. ${n.destination.note || ''} Pending: ${n.pending}`;
-  $('notifyHistory').textContent =
-    n.history.map((h) => `${h.time} ${h.status} ${h.code || ''} ${h.id}`).join('\n') ||
-    'No notifications yet.';
-}
-$('notifyMode').onchange = notificationMode;
-$('notificationForm').onsubmit = async (e) => {
-  e.preventDefault();
-  try {
-    await api('notifications/settings', {
-      enabled: $('notifyEnabled').checked,
-      mode: $('notifyMode').value,
-      guildId: $('notifyGuild').value.trim(),
-      channelId: $('notifyChannel').value.trim(),
-      categoryId: $('notifyCategory').value.trim(),
-      userId: $('notifyUser').value.trim(),
-      perMinute: Number($('notifyRate').value),
-      queueLimit: Number($('notifyQueue').value),
-      dedupSeconds: Number($('notifyDedup').value),
-    });
-    await load();
-    notice('Notification settings saved. Validate or send a test to check delivery.');
-  } catch (e) {
-    notice(e.message, 'error');
-  }
-};
-for (const [id, route] of [
-  ['notifyValidate', 'validate'],
-  ['notifyTest', 'test'],
-])
-  $(id).onclick = async () => {
-    $(id).disabled = true;
-    try {
-      const r = await api('notifications/' + route, route === 'test' ? { source: $('notifyTestSource').value.trim() } : {});
-      notice(route === 'test' ? `Test notification: ${r.status}.` : `Destination: ${r.label}`);
-    } catch (e) {
-      notice(e.message, 'error');
-    } finally {
-      $(id).disabled = false;
-      await load().catch(() => {});
-    }
-  };
-$('notifyRotate').onclick = async () => {
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a');
   if (
-    !confirm(
-      'Generate a new notification credential? Any previous credential will stop working immediately.',
-    )
+    !link ||
+    link.origin !== location.origin ||
+    event.button !== 0 ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    event.altKey
   )
     return;
+  event.preventDefault();
+  clearEnrollment();
   clearNotificationCredential();
-  try {
-    const result = await api('notifications/credential', {});
-    $('notifySecret').value = result.token;
-    $('notifySecretBox').hidden = false;
-    notificationSecretTimer = setTimeout(clearNotificationCredential, 60000);
-    await load();
-    notice('Credential generated. Copy it now; it cannot be retrieved later.');
-  } catch (e) {
-    notice(e.message, 'error');
-  }
-};
-$('notifyClear').onclick = () => {
+  history.pushState({}, '', link.pathname);
+  showPage(true);
+});
+window.addEventListener('popstate', () => {
+  clearEnrollment();
   clearNotificationCredential();
-  notice('Credential display cleared.');
-};
-$('notifyCopy').onclick = async () => {
-  try {
-    await navigator.clipboard.writeText($('notifySecret').value);
-    notice('Credential copied. Store it securely in the caller.');
-  } catch {
-    notice('Select and copy the credential field manually.');
-  }
-};
-$('notifyRefresh').onclick = () =>
-  load()
-    .then(() => notice('Notification status refreshed.'))
-    .catch((e) => notice(e.message, 'error'));
-window.addEventListener('pagehide', clearNotificationCredential);
-$('notifyCreateCategory').onclick = async () => {
-  $('notifyCreateCategory').disabled = true;
-  try {
-    const result = await api('notifications/category', { guildId: $('notifyGuild').value.trim() });
-    $('notifyCategory').value = result.categoryId;
-    notice('Agent Notifications category created. Save notification settings to use it.');
-  } catch (e) {
-    notice(e.message, 'error');
-  } finally {
-    $('notifyCreateCategory').disabled = false;
-  }
-};
+  showPage(true);
+});
+
+try {
+  const session = await api('session');
+  csrf = session.csrf;
+  await load(true);
+  showPage();
+  $('login').hidden = true;
+  $('dashboard').hidden = false;
+} catch {
+  lockPanel();
+}

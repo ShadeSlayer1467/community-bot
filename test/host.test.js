@@ -29,13 +29,19 @@ test('registration removal validates scope and deletes only the selected command
   const commandId = '100000000000000002';
   const deleted = [];
   host.client.rest.get = async () => [{ id: commandId, name: 'legacy', type: 1 }];
-  host.client.rest.delete = async route => deleted.push(route);
-  await assert.rejects(host.removeRegistered({ commandId, guildId: '100000000000000003' }), /unconfigured/);
-  await assert.rejects(host.removeRegistered({ commandId: '100000000000000004' }), /no longer exists/);
+  host.client.rest.delete = async (route) => deleted.push(route);
+  await assert.rejects(
+    host.removeRegistered({ commandId, guildId: '100000000000000003' }),
+    /unconfigured/,
+  );
+  await assert.rejects(
+    host.removeRegistered({ commandId: '100000000000000004' }),
+    /no longer exists/,
+  );
   assert.equal(deleted.length, 0);
   await host.removeRegistered({ commandId });
   assert.deepEqual(deleted, [`/applications/${id}/commands/${commandId}`]);
-  assert.equal(host.registered.find(g => g.scope === 'global').commands.length, 0);
+  assert.equal(host.registered.find((g) => g.scope === 'global').commands.length, 0);
   await host.removeRegistered({ commandId, guildId: id });
   assert.equal(deleted[1], `/applications/${id}/guilds/${id}/commands/${commandId}`);
   assert.equal(host.syncing, false);
@@ -66,4 +72,31 @@ test('application mismatch fails closed and destroys the authenticated client', 
   assert.equal(host.state, 'offline');
   assert.equal(host.client.ws.destroyed, true);
   assert.equal(host.lifecycleBusy, false);
+});
+
+test('sync registers Workout only as a global bot-DM command and removes it when disabled', async (t) => {
+  const host = createHost();
+  t.after(() => host.client.destroy());
+  stubLogin(host);
+  const put = [],
+    post = [],
+    deleted = [];
+  host.client.rest.put = async (route, { body }) => {
+    put.push(body);
+    return body;
+  };
+  host.client.rest.get = async () => [{ id: '100000000000000004', name: 'workout', type: 1 }];
+  host.client.rest.post = async (route, { body }) => {
+    post.push(body);
+    return body;
+  };
+  host.client.rest.delete = async (route) => deleted.push(route);
+  await host.sync();
+  assert.ok(put.every((commands) => !commands.some((c) => c.name === 'workout')));
+  assert.deepEqual(post.find((c) => c.name === 'workout').contexts, [1]);
+  host.settings = { read: () => ({ ...defaults, disabled: [...defaults.disabled, 'workout'] }) };
+  post.length = 0;
+  await host.sync();
+  assert.ok(!post.some((c) => c.name === 'workout'));
+  assert.ok(deleted.some((route) => route.endsWith('/100000000000000004')));
 });

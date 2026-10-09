@@ -21,6 +21,8 @@ for (const folder of ['src', 'custom', 'scripts', 'test', 'examples/notification
   if (fs.existsSync(path.join(root, folder))) check(path.join(root, folder));
 const { definitions, developerDefinitions } = await import('../src/commands/definitions.js');
 const { defaults } = await import('../src/settings.js');
+const { workoutDefinition } = await import('../src/workout/discord.js');
+workoutDefinition();
 definitions(defaults);
 developerDefinitions(defaults);
 console.log(

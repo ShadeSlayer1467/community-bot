@@ -1,3 +1,4 @@
+import { adminModules } from '../src/admin/public/registry.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -33,6 +34,11 @@ test('local panel requires authentication, enforces origin/CSRF and saves settin
   });
   const url = `http://127.0.0.1:${config.port}`;
   assert.equal((await fetch(url + '/api/state')).status, 401);
+  for (const module of adminModules.filter(m => m.route !== '/')) {
+    const response = await fetch(url + module.route, { redirect: 'manual' });
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('location'), '/?next=' + encodeURIComponent(module.route));
+  }
   assert.equal(
     (
       await fetch(url + '/api/totp/start', {
@@ -66,6 +72,14 @@ test('local panel requires authentication, enforces origin/CSRF and saves settin
   const { csrf } = await login.json();
   const headers = { Cookie: cookie, 'Content-Type': 'application/json' };
   assert.equal((await fetch(url + '/api/state', { headers })).status, 200);
+  for (const module of adminModules) {
+    const page = await fetch(url + module.route, { headers });
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /Primary navigation/);
+    assert.equal((await fetch(url + '/modules/' + module.id + '.js', { headers })).status, 200);
+  }
+  assert.equal((await (await fetch(url + '/api/session', { headers })).json()).csrf, csrf);
+  assert.equal((await fetch(url + '/unknown', { headers })).status, 404);
   assert.equal(
     (
       await fetch(url + '/api/settings', {

@@ -1,3 +1,4 @@
+import { createWorkoutHandler } from '../workout/discord.js';
 import { randomInt } from 'node:crypto';
 import { MessageFlags } from 'discord.js';
 import { requireAccess } from '../authorization.js';
@@ -15,12 +16,15 @@ export function makeHandler({
   runner,
   client,
   security,
+  workout,
 }) {
   const developer = createDeveloperHandler({ config, settings, logger, runner, client, security });
+  const workouts = createWorkoutHandler({ config, settings, workout, logger, client });
   const cooldowns = new Map();
   let aiBusy = false;
   return async (i) => {
     if (developer.handles(i)) return developer.handle(i);
+    if (workouts.handles(i)) return workouts.handle(i);
     if (!i.isChatInputCommand()) return;
     const s = settings.read();
     const name = i.commandName;

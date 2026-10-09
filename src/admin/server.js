@@ -1,3 +1,5 @@
+import { workoutAdmin, workoutGetRoutes, workoutPostRoutes } from '../workout/admin.js';
+import { adminModules } from './public/registry.js';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +24,16 @@ async function jsonBody(req) {
     throw new Error('Invalid JSON request.');
   }
 }
-export function createAdmin({ config, settings, host, logger, runner, security, notifications }) {
+export function createAdmin({
+  config,
+  settings,
+  host,
+  logger,
+  runner,
+  security,
+  notifications,
+  workout,
+}) {
   const sessions = new Map();
   let failed = 0;
   let retryAt = 0;
@@ -82,11 +93,22 @@ export function createAdmin({ config, settings, host, logger, runner, security, 
           });
         }
       }
-      if (
-        req.method === 'GET' &&
-        ['/', '/app.js', '/backdrop.js', '/style.css'].includes(url.pathname)
-      ) {
-        const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
+      const pageRoute = adminModules.some(
+        (m) => m.route === url.pathname || m.pages?.some((p) => p.route === url.pathname),
+      );
+      const assets = [
+        '/app.js',
+        '/shell.js',
+        '/registry.js',
+        '/backdrop.js',
+        '/style.css',
+        '/modules/notification-controls.js',
+        '/modules/custom-controls.js',
+        '/modules/command-controls.js',
+        '/modules/workout-controls.js',
+        ...adminModules.map((m) => '/modules/' + m.id + '.js'),
+      ];
+      const serve = (file) => {
         res.writeHead(200, {
           'Content-Type': file.endsWith('.js')
             ? 'text/javascript'
@@ -94,8 +116,10 @@ export function createAdmin({ config, settings, host, logger, runner, security, 
               ? 'text/css'
               : 'text/html',
         });
-        return res.end(fs.readFileSync(path.join(publicDir, file)));
-      }
+        res.end(fs.readFileSync(path.join(publicDir, file)));
+      };
+      if (req.method === 'GET' && (url.pathname === '/' || assets.includes(url.pathname)))
+        return serve(url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
       if (url.pathname === '/api/login' && req.method === 'POST') {
         if (Date.now() < retryAt)
           return send(429, { error: 'Too many login attempts. Wait one minute.' });
@@ -121,21 +145,35 @@ export function createAdmin({ config, settings, host, logger, runner, security, 
       }
       const id = /(?:^|;\s*)session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie ?? '')?.[1];
       const session = sessions.get(id);
-      if (!session || session.until < Date.now())
+      if (!session || session.until < Date.now()) {
+        if (req.method === 'GET' && pageRoute) {
+          res.writeHead(302, { Location: '/?next=' + encodeURIComponent(url.pathname) });
+          return res.end();
+        }
         return send(401, { error: 'Sign in to the local admin panel.' });
+      }
+      if (req.method === 'GET' && url.pathname === '/api/session')
+        return send(200, { csrf: session.csrf });
       if (req.method === 'POST' && !equal(req.headers['x-csrf-token'] ?? '', session.csrf))
         return send(403, { error: 'Invalid request token. Sign in again.' });
+      if (req.method === 'GET' && pageRoute) return serve('index.html');
       if (req.method === 'GET' && url.pathname === '/api/state')
         return send(200, {
+          uptimeSeconds: Math.floor(process.uptime()),
           status: host.status(),
           settings: settings.read(),
           builtinNames,
           logs: logger.recent,
           security: security?.status() ?? { enrolled: false, ownerId: null, elevatedUntil: null },
           notifications: notifications?.status() ?? null,
+          workout: workout?.summary(config.customOwnerId || config.ownerIds?.[0]) ?? null,
         });
+      if (req.method === 'GET' && workoutGetRoutes.includes(url.pathname))
+        return send(200, workoutAdmin(workout, config, url));
       if (req.method === 'POST') {
         const body = await jsonBody(req);
+        if (workoutPostRoutes.includes(url.pathname))
+          return send(200, workoutAdmin(workout, config, url, body));
         switch (url.pathname) {
           case '/api/notifications/category': {
             if (!notifications?.delivery.agents || !host.client.isReady())

@@ -1,3 +1,5 @@
+import { WorkoutRepository } from '../src/workout/repository.js';
+import { WorkoutService } from '../src/workout/service.js';
 // Optional real-browser smoke test. Set PLAYWRIGHT_MODULE to an installed playwright module.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -34,7 +36,13 @@ const config = {
   openaiModel: '',
 };
 const settings = new Store(path.join(directory, 'settings.json'), defaults, validateSettings);
-const logger = { log() {}, recent: [], redact: (value) => value };
+const logger = {
+  log() {},
+  recent: [
+    { time: '2026-10-09T00:00:00Z', level: 'info', message: 'Browser fixture ready', details: '' },
+  ],
+  redact: (value) => value,
+};
 const security = new DeveloperAccess({
   config,
   vault: new WindowsVault(path.join(directory, 'totp.dpapi.json')),
@@ -62,7 +70,19 @@ const notifications = new NotificationService({
   delivery: new NotificationDelivery(host),
   logger,
 });
-const server = createAdmin({ config, settings, host, logger, runner, security, notifications });
+const workout = new WorkoutService(
+  new WorkoutRepository(path.join(directory, 'workout'), config.ownerIds),
+);
+const server = createAdmin({
+  config,
+  settings,
+  host,
+  logger,
+  runner,
+  security,
+  notifications,
+  workout,
+});
 let browser;
 try {
   server.listen(0, '127.0.0.1');
@@ -79,6 +99,15 @@ try {
   await page.getByLabel('Admin password', { exact: true }).fill(config.adminPassword);
   await page.getByRole('button', { name: 'Unlock panel' }).click();
   await page.locator('#dashboard').waitFor({ state: 'visible' });
+  const navigate = async (name) => {
+    await page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+    await page.locator('#pageTitle').filter({ hasText: name }).waitFor();
+  };
+  assert.equal(await page.locator('#pageTitle').textContent(), 'Home');
+  await navigate('CustomCommand');
+  await page.reload();
+  await page.locator('#dashboard').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#pageTitle').textContent(), 'CustomCommand');
   await page.getByLabel('Re-enter admin password for enrollment').fill(config.adminPassword);
   await page.getByRole('button', { name: 'Enroll / replace authenticator' }).click();
   await page.locator('#enrollment').waitFor({ state: 'visible' });
@@ -96,6 +125,11 @@ try {
   assert.ok(!fs.readFileSync(path.join(directory, 'totp.dpapi.json'), 'utf8').includes(secret));
   await page.getByRole('button', { name: 'Revoke developer session' }).click();
   await page.getByRole('status').filter({ hasText: 'Developer session revoked' }).waitFor();
+  await page.locator('#timeout').fill('17');
+  await page.getByRole('button', { name: 'Save execution settings' }).click();
+  await page.locator('#notice').filter({ hasText: 'Saved.' }).waitFor();
+  assert.equal(settings.read().customTimeoutSeconds, 17);
+  await navigate('Commands');
   await page.getByRole('button', { name: '+ Add response command' }).click();
   const row = page.locator('.response').last();
   await row.getByLabel('Command name').fill('rules');
@@ -107,8 +141,15 @@ try {
     new Store(settings.file, defaults, validateSettings).read().responses.at(-1).name,
     'rules',
   );
+  assert.equal(settings.read().customTimeoutSeconds, 17);
+  await navigate('Logs');
+  assert.match(await page.locator('#logText').textContent(), /Browser fixture ready/);
+  await page.locator('#refresh').click();
+  await page.locator('#notice').filter({ hasText: 'Status and logs refreshed' }).waitFor();
+  await navigate('Settings');
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Fill in discordToken' }).waitFor();
+  await navigate('Notifications');
   await page.locator('#notifyMode').selectOption('dm');
   await page.locator('#notifyDmFields').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#notifyUser').inputValue(), config.customOwnerId);
@@ -170,15 +211,239 @@ try {
   await page.screenshot({ path: path.join(dataDir, 'admin-preview.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  for (const name of [
+    'Home',
+    'Workout',
+    'Kingshot',
+    'Logs',
+    'Settings',
+    'CustomCommand',
+    'Notifications',
+    'Commands',
+  ]) {
+    await navigate(name);
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      true,
+    );
+    assert.equal(await page.locator('#navigation [aria-current=page]').textContent(), name);
+  }
   await row.getByRole('button', { name: 'Remove command' }).click();
   await page.getByRole('button', { name: 'Save settings', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Saved.' }).waitFor();
   assert.equal(settings.read().responses.length, 1);
+  await page.screenshot({ path: path.join(dataDir, 'admin-mobile-preview.png'), fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await navigate('Workout');
+  const workoutPage = async (name) => {
+    await page
+      .getByRole('navigation', { name: 'Workout pages', exact: true })
+      .getByRole('link', { name, exact: true })
+      .click();
+    await page
+      .locator('#workoutContent')
+      .getByRole('heading', {
+        name:
+          name === 'Exercises'
+            ? 'Exercise library'
+            : name === 'Programs'
+              ? 'Programs'
+              : name === 'Active'
+                ? 'Active workout'
+                : name === 'History'
+                  ? 'Workout history'
+                  : name === 'Overview'
+                    ? 'Workout overview'
+                    : name === 'Settings'
+                      ? 'Workout settings'
+                      : 'Progression',
+        exact: true,
+      })
+      .waitFor();
+  };
+  await workoutPage('Exercises');
+  const exerciseEditor = page.locator('#exerciseEditor');
+  await exerciseEditor.getByLabel('Exercise name', { exact: true }).fill('Bench Press');
+  await exerciseEditor.getByLabel('Variation / machine settings').fill('Paused');
+  await exerciseEditor.getByLabel('Load (per implement / side when selected)').fill('225');
+  await exerciseEditor.getByRole('button', { name: 'Save exercise', exact: true }).click();
+  await page.locator('#notice').filter({ hasText: 'Workout changes saved' }).waitFor();
+  assert.equal(workout.catalog(config.customOwnerId).exercises[0].name, 'Bench Press');
+  await workoutPage('Programs');
+  let programEditor = page.locator('#programEditor');
+  await programEditor.getByLabel('Program name', { exact: true }).fill('Strength');
+  await programEditor.getByLabel('Planned workout name', { exact: true }).fill('Push A');
+  await programEditor
+    .getByLabel('Exercise to add', { exact: true })
+    .selectOption({ label: 'Bench Press' });
+  await programEditor.getByRole('button', { name: 'Add exercise to plan', exact: true }).click();
+  await programEditor.getByRole('button', { name: 'Save program', exact: true }).click();
+  await page.locator('#notice').filter({ hasText: 'Workout changes saved' }).waitFor();
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Select Push A as next workout', exact: true })
+    .waitFor();
+  const workoutProgram = workout.catalog(config.customOwnerId).programs[0];
+  assert.equal(workoutProgram.templates[0].exercises[0].resistance.value, 225);
+  await workoutPage('Overview');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Start planned workout', exact: true })
+    .click();
+  await page
+    .locator('#workoutContent')
+    .getByText('Continue active workout', { exact: true })
+    .waitFor();
+  await workoutPage('Active');
+  for (let i = 0; i < 3; i++) {
+    await page.getByLabel('Reps to log', { exact: true }).fill('12');
+    await page
+      .locator('#workoutContent')
+      .getByRole('button', { name: 'Log Set', exact: true })
+      .click();
+    await page.waitForFunction(
+      (n) => document.querySelectorAll('#workoutContent table tr').length === n + 2,
+      i,
+    );
+  }
+  assert.equal(workout.active(config.customOwnerId).exercises[0].sets.length, 3);
+  await page.reload();
+  await page.locator('#dashboard').waitFor({ state: 'visible' });
+  await page.getByLabel('Reps to log', { exact: true }).waitFor();
+  assert.equal(workout.active(config.customOwnerId).exercises[0].workingResistance.value, 225);
+  page.once('dialog', (dialog) => dialog.accept());
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Finish Workout', exact: true })
+    .click();
+  await page
+    .locator('#workoutContent')
+    .getByText('No active workout. Start planned or free from Overview.', { exact: true })
+    .waitFor();
+  await workoutPage('History');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Accept Progression', exact: true })
+    .waitFor();
+  await page.screenshot({
+    path: path.join(dataDir, 'workout-history-preview.png'),
+    fullPage: true,
+  });
+  page.once('dialog', (dialog) => dialog.accept());
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Accept Progression', exact: true })
+    .click();
+  await page.waitForFunction(
+    () =>
+      ![...document.querySelectorAll('#workoutContent button')].some(
+        (b) => b.textContent === 'Accept Progression',
+      ),
+  );
+  assert.equal(
+    workout.catalog(config.customOwnerId).programs[0].templates[0].exercises[0].resistance.value,
+    230,
+  );
+  await page.getByLabel('Exercise history', { exact: true }).selectOption({ label: 'Bench Press' });
+  await page
+    .locator('#workoutContent')
+    .getByRole('heading', { name: 'Exercise performance timeline' })
+    .waitFor();
+  assert.equal(await page.locator('#workoutContent meter').count(), 3);
+  await navigate('Home');
+  assert.match(await page.locator('#summaries').textContent(), /Workout.*Next: Push A/);
+  await navigate('Workout');
+  await workoutPage('Overview');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Start free workout', exact: true })
+    .click();
+  await page
+    .locator('#workoutContent')
+    .getByText('Continue active workout', { exact: true })
+    .waitFor();
+  await workoutPage('Active');
+  await page.getByLabel('Exercise to add', { exact: true }).selectOption({ label: 'Bench Press' });
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Add exercise', exact: true })
+    .click();
+  await page.getByLabel('Reps to log', { exact: true }).waitFor();
+  await page.getByLabel('Reps to log', { exact: true }).fill('8');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Log Set', exact: true })
+    .click();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('#workoutContent select option')].some(
+      (o) => o.textContent === 'Set 1',
+    ),
+  );
+  await page.locator('#workoutContent').getByText('Edit / delete a set', { exact: true }).click();
+  await page.getByLabel('Set to edit', { exact: true }).selectOption({ label: 'Set 1' });
+  await page.getByLabel('Reps', { exact: true }).fill('9');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Save set edit', exact: true })
+    .click();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('#workoutContent td')].some((e) => e.textContent === '9'),
+  );
+  await page.locator('#workoutContent').getByText('Change Weight', { exact: true }).click();
+  await page.getByLabel('Resistance type', { exact: true }).selectOption('pair');
+  await page.getByLabel('Load (per implement / side when selected)', { exact: true }).fill('135');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Use this working resistance', exact: true })
+    .click();
+  await page
+    .locator('#workoutContent')
+    .getByText('Working resistance: 2 × 135 lb', { exact: true })
+    .waitFor();
+  await page.getByLabel('Reps to log', { exact: true }).fill('7');
+  await page
+    .locator('#workoutContent')
+    .getByRole('button', { name: 'Log Set', exact: true })
+    .click();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('#workoutContent td')].some(
+      (e) => e.textContent === '2 × 135 lb',
+    ),
+  );
+  assert.equal(workout.active(config.customOwnerId).exercises[0].sets[1].resistance.kind, 'pair');
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const name of [
+    'Overview',
+    'Programs',
+    'Exercises',
+    'History',
+    'Progression',
+    'Active',
+    'Settings',
+  ]) {
+    await workoutPage(name);
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      true,
+    );
+  }
+  await workoutPage('Active');
+  await page.screenshot({ path: path.join(dataDir, 'workout-mobile-preview.png'), fullPage: true });
   await page.getByRole('button', { name: 'Sign out' }).click();
   await page.locator('#login').waitFor({ state: 'visible' });
+  await page.goto(`http://127.0.0.1:${config.port}/notifications`);
+  await page.locator('#login').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#dashboard').isVisible(), false);
+  await page.getByLabel('Admin password', { exact: true }).fill(config.adminPassword);
+  await page.getByRole('button', { name: 'Unlock panel' }).click();
+  await page.locator('#dashboard').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#pageTitle').textContent(), 'Notifications');
+  await navigate('Home');
+  await page.goBack();
+  assert.equal(await page.locator('#pageTitle').textContent(), 'Notifications');
   assert.deepEqual(errors, []);
   console.log(
-    'Browser smoke passed: notifications credential masking/clearing, persistence, validation error, DM/channel switch and test delivery; plus authenticator enrollment, command editing, responsive layout and logout. No page errors; no live Discord sends.',
+    'Browser smoke passed: Workout program/exercise CRUD, planned/free sessions, set edits, load carry-forward, confirmed finish, progression acceptance, timeline, deep refresh and mobile subpages; module navigation/active links, deep refresh/login redirects/back, module saves, logs, all-page mobile layout; notifications credential masking/clearing, persistence, validation error, DM/channel switch and test delivery; plus authenticator enrollment, command editing, responsive layout and logout. No page errors; no live Discord sends.',
   );
 } finally {
   notifications.close();
