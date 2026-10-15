@@ -11,3 +11,5 @@ Readings are never tied to preset dates. Backlog counts missed calendar days sin
 `/bible history` lists completed passages and completion dates, newest first, 20 per page. Use `/bible history page:2` for older entries. History does not start a plan. State is saved atomically in ignored `data/bible.json` and survives restarts. Abandon does not reset the plan or erase history.
 
 The Commands admin section can disable Bible. Sync registers the command in configured servers and bot DMs.
+
+`/bible full` shows the entire plan across 19 pages, with ✅ before completed readings and ❌ before unfinished readings. Each page has up to 20 readings in two compact columns; Discord can stack the columns on narrow mobile screens. Use Previous/Next buttons or `/bible full page:2` to browse. Browsing does not start your plan or change progress, and each page refreshes your current completion marks.

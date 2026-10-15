@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Store } from '../src/persistence.js';
 import { BibleService, books, chapters, plan } from '../src/bible/service.js';
-import { bibleDefinition, createBibleHandler, readingMessage } from '../src/bible/discord.js';
+import { bibleDefinition, createBibleHandler, readingMessage, fullPlanMessage } from '../src/bible/discord.js';
 import { definitions } from '../src/commands/definitions.js';
 import { defaults } from '../src/settings.js';
 
@@ -102,4 +102,35 @@ test('schemas, private replies, button dispatch and history pagination', async t
   await handler.handle({ ...interaction, options: { getSubcommand: () => 'history', getInteger: () => 2 } });
   assert.match(replies.at(-1).embeds[0].footer.text, /Page 2\/2/);
   assert.equal(replies.at(-1).embeds[0].description.split('\n').length, 5);
+  await handler.handle({ ...interaction, options: { getSubcommand: () => 'full', getInteger: () => null } });
+  assert.match(replies.at(-1).embeds[0].fields[0].value, /✅ 1\. Matthew 1-3/);
+  await handler.handle({ ...button, customId: 'bible:a:full:2' });
+  assert.match(replies.at(-1).embeds[0].footer.text, /Page 2\/19/);
+  assert.match(replies.at(-1).embeds[0].fields[0].value, /❌ 26\./);
+  assert.equal(service.history('a').completed.length, 25);
+});
+
+test('full plan pages cover all readings, preserve progress and fit embed limits', t => {
+  const { service } = fixture(t);
+  const lines = [];
+  assert.ok(bibleDefinition().options.some(s => s.name === 'full'));
+  for (let page = 1; page <= 19; page++) {
+    const message = fullPlanMessage(service.history('a'), 'a', page);
+    const embed = message.embeds[0];
+    assert.ok(embed.fields.length <= 2);
+    for (const field of embed.fields) {
+      assert.ok(field.inline);
+      assert.ok(field.value.length <= 1024);
+      lines.push(...field.value.split('\n'));
+    }
+    assert.ok(JSON.stringify(embed).length < 6000);
+    assert.equal(message.components[0].components[0].disabled, page === 1);
+    assert.equal(message.components[0].components[1].disabled, page === 19);
+  }
+  assert.deepEqual(lines, plan.map((passage, index) => `❌ ${index + 1}. ${passage}`));
+  assert.equal(service.history('a'), null);
+  const first = service.today('a');
+  service.act('a', first.active, 'complete');
+  const updated = fullPlanMessage(service.history('a'), 'a');
+  assert.match(updated.embeds[0].fields[0].value, /^✅ 1\. Matthew 1-3\n❌ 2\./);
 });
