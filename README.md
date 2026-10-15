@@ -34,6 +34,7 @@ Local programs can send outbound notifications through `POST /api/notifications`
 | --- | --- |
 | Utilities | `/help`, `/ping`, `/server` (including channel topic), `/user`, `/avatar`, `/roles`, `/add`, `/embed` |
 | Community | `/card` (Ace low, no real currency), `/feedback` (one saved rating per member/server), `/tasks` (private per-user and per-server list) |
+| Bible | `/bible today`, Complete/Abandon buttons, and `/bible history`; personal 365-reading plan starting in the New Testament. See [Bible guide](docs/BIBLE.md). |
 | AI | `/ask`; disabled by default, configured provider/model, moderation allowlist, cooldown and one concurrent request |
 | Moderation | `/purge count:50`, optional `target`, `minutes`, and `scan`; `/kick`, `/ban` with reasons |
 | Text commands | Add/edit/delete responses through the panel, with everyone/moderator/owner access and `{user}` / `{server}` placeholders |
