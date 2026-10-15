@@ -2,18 +2,18 @@ import { randomUUID } from 'node:crypto';
 
 // Canonical chapter counts. Reading order is the New Testament, then the Old Testament.
 export const books = [
-  ['Matt',28],['Mark',16],['Luke',24],['John',21],['Acts',28],['Rom',16],
-  ['1 Cor',16],['2 Cor',13],['Gal',6],['Eph',6],['Phil',4],['Col',4],
-  ['1 Thess',5],['2 Thess',3],['1 Tim',6],['2 Tim',4],['Titus',3],['Phlm',1],
-  ['Heb',13],['Jas',5],['1 Pet',5],['2 Pet',3],['1 John',5],['2 John',1],
-  ['3 John',1],['Jude',1],['Rev',22],
-  ['Gen',50],['Exod',40],['Lev',27],['Num',36],['Deut',34],['Josh',24],
-  ['Judg',21],['Ruth',4],['1 Sam',31],['2 Sam',24],['1 Kgs',22],['2 Kgs',25],
-  ['1 Chr',29],['2 Chr',36],['Ezra',10],['Neh',13],['Esth',10],['Job',42],
-  ['Ps',150],['Prov',31],['Eccl',12],['Song',8],['Isa',66],['Jer',52],
-  ['Lam',5],['Ezek',48],['Dan',12],['Hos',14],['Joel',3],['Amos',9],
-  ['Obad',1],['Jonah',4],['Mic',7],['Nah',3],['Hab',3],['Zeph',3],
-  ['Hag',2],['Zech',14],['Mal',4],
+  ['Matthew',28],['Mark',16],['Luke',24],['John',21],['Acts',28],['Romans',16],
+  ['1 Corinthians',16],['2 Corinthians',13],['Galatians',6],['Ephesians',6],['Philippians',4],['Colossians',4],
+  ['1 Thessalonians',5],['2 Thessalonians',3],['1 Timothy',6],['2 Timothy',4],['Titus',3],['Philemon',1],
+  ['Hebrews',13],['James',5],['1 Peter',5],['2 Peter',3],['1 John',5],['2 John',1],
+  ['3 John',1],['Jude',1],['Revelation',22],
+  ['Genesis',50],['Exodus',40],['Leviticus',27],['Numbers',36],['Deuteronomy',34],['Joshua',24],
+  ['Judges',21],['Ruth',4],['1 Samuel',31],['2 Samuel',24],['1 Kings',22],['2 Kings',25],
+  ['1 Chronicles',29],['2 Chronicles',36],['Ezra',10],['Nehemiah',13],['Esther',10],['Job',42],
+  ['Psalms',150],['Proverbs',31],['Ecclesiastes',12],['Song of Solomon',8],['Isaiah',66],['Jeremiah',52],
+  ['Lamentations',5],['Ezekiel',48],['Daniel',12],['Hosea',14],['Joel',3],['Amos',9],
+  ['Obadiah',1],['Jonah',4],['Micah',7],['Nahum',3],['Habakkuk',3],['Zephaniah',3],
+  ['Haggai',2],['Zechariah',14],['Malachi',4],
 ];
 export const chapters = books.flatMap(([book, count]) =>
   Array.from({ length: count }, (_, n) => ({ book, chapter: n + 1 })));

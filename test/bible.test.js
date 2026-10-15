@@ -26,10 +26,10 @@ test('365 readings cover every chapter once, NT first, with no gaps', () => {
     return Array.from({ length: +(last ?? first) - +first + 1 }, (_, n) => ({ book, chapter: +first + n }));
   }));
   assert.deepEqual(expanded, chapters);
-  assert.equal(plan[0], 'Matt 1-3');
-  assert.equal(expanded[259].book, 'Rev');
-  assert.deepEqual(expanded[260], { book: 'Gen', chapter: 1 });
-  assert.equal(plan.at(-1), 'Mal 1-4');
+  assert.equal(plan[0], 'Matthew 1-3');
+  assert.equal(expanded[259].book, 'Revelation');
+  assert.deepEqual(expanded[260], { book: 'Genesis', chapter: 1 });
+  assert.equal(plan.at(-1), 'Malachi 1-4');
 });
 test('day 4 returns reading 2 and 2 behind; history and state survive restart', t => {
   const { service, clock, file } = fixture(t);
