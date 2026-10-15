@@ -1,4 +1,5 @@
 import { createWorkoutHandler } from '../workout/discord.js';
+import { createBibleHandler } from '../bible/discord.js';
 import { randomInt } from 'node:crypto';
 import { MessageFlags } from 'discord.js';
 import { requireAccess } from '../authorization.js';
@@ -17,12 +18,15 @@ export function makeHandler({
   client,
   security,
   workout,
+  bible,
 }) {
+  const readings = createBibleHandler({ config, settings, bible, logger });
   const developer = createDeveloperHandler({ config, settings, logger, runner, client, security });
   const workouts = createWorkoutHandler({ config, settings, workout, logger, client });
   const cooldowns = new Map();
   let aiBusy = false;
   return async (i) => {
+    if (readings.handles(i)) return readings.handle(i);
     if (developer.handles(i)) return developer.handle(i);
     if (workouts.handles(i)) return workouts.handle(i);
     if (!i.isChatInputCommand()) return;

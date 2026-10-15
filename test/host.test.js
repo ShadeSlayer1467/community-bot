@@ -74,7 +74,7 @@ test('application mismatch fails closed and destroys the authenticated client', 
   assert.equal(host.lifecycleBusy, false);
 });
 
-test('sync registers Workout in configured servers and globally and removes it when disabled', async (t) => {
+test('sync registers Workout and Bible in servers and DMs and removes disabled registrations', async (t) => {
   const host = createHost();
   t.after(() => host.client.destroy());
   stubLogin(host);
@@ -85,7 +85,10 @@ test('sync registers Workout in configured servers and globally and removes it w
     put.push(body);
     return body;
   };
-  host.client.rest.get = async () => [{ id: '100000000000000004', name: 'workout', type: 1 }];
+  host.client.rest.get = async () => [
+    { id: '100000000000000004', name: 'workout', type: 1 },
+    { id: '100000000000000005', name: 'bible', type: 1 },
+  ];
   host.client.rest.post = async (route, { body }) => {
     post.push(body);
     return body;
@@ -97,9 +100,14 @@ test('sync registers Workout in configured servers and globally and removes it w
     put.every((commands) => commands.find((c) => c.name === 'workout').contexts === undefined),
   );
   assert.deepEqual(post.find((c) => c.name === 'workout').contexts, [1]);
-  host.settings = { read: () => ({ ...defaults, disabled: [...defaults.disabled, 'workout'] }) };
+  assert.ok(put.every(commands => commands.some(c => c.name === 'bible' && c.contexts === undefined)));
+  assert.deepEqual(post.find(c => c.name === 'bible').contexts, [1]);
+  host.settings = { read: () => ({ ...defaults, disabled: [...defaults.disabled, 'workout', 'bible'] }) };
   post.length = 0;
   await host.sync();
   assert.ok(!post.some((c) => c.name === 'workout'));
+  assert.ok(!post.some((c) => c.name === 'bible'));
+  assert.ok(!put.at(-1).some(c => c.name === 'bible'));
   assert.ok(deleted.some((route) => route.endsWith('/100000000000000004')));
+  assert.ok(deleted.some((route) => route.endsWith('/100000000000000005')));
 });

@@ -1,4 +1,5 @@
 import { WorkoutRepository } from './workout/repository.js';
+import { BibleService } from './bible/service.js';
 import { WorkoutService } from './workout/service.js';
 import path from 'node:path';
 import { loadConfig, root } from './config.js';
@@ -48,6 +49,7 @@ async function main() {
     runner,
     security,
     workout,
+    bible: new BibleService(new Store(path.join(root, 'data', 'bible.json'), {})),
   });
   const notifications = new NotificationService({
     settings: new Store(
