@@ -1,4 +1,5 @@
 import { workoutDefinition } from './workout/discord.js';
+import { bibleDefinition } from './bible/discord.js';
 import { Client, GatewayIntentBits, Events, Routes, Partials } from 'discord.js';
 import { once } from 'node:events';
 import { connectionIssues, snowflake } from './config.js';
@@ -101,6 +102,7 @@ export class DiscordHost {
       // Upsert only our DM commands; do not wipe unrelated global commands.
       const dmCommands = [
         ...developerDefinitions(this.settings.read()),
+        ...(!this.settings.read().disabled.includes('bible') ? [bibleDefinition()] : []),
         ...(!this.settings.read().disabled.includes('workout') ? [workoutDefinition()] : []),
       ];
       const existing = await this.client.rest.get(
@@ -116,8 +118,8 @@ export class DiscordHost {
             Routes.applicationCommand(this.config.applicationId, command.id),
           );
       }
-      if (this.settings.read().disabled.includes('workout')) {
-        for (const command of existing.filter((c) => c.name === 'workout'))
+      for (const name of ['workout', 'bible'].filter(name => this.settings.read().disabled.includes(name))) {
+        for (const command of existing.filter((c) => c.name === name))
           await this.client.rest.delete(
             Routes.applicationCommand(this.config.applicationId, command.id),
           );

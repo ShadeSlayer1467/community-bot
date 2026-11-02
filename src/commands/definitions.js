@@ -1,4 +1,5 @@
 import { workoutDefinition } from '../workout/discord.js';
+import { bibleDefinition } from '../bible/discord.js';
 import {
   SlashCommandBuilder,
   PermissionFlagsBits as P,
@@ -102,6 +103,7 @@ export function definitions(settings) {
   }
   return [
     ...commands.map((c) => c.toJSON()),
+    ...(!settings.disabled.includes('bible') ? [bibleDefinition({ guild: true })] : []),
     ...(!settings.disabled.includes('workout') ? [workoutDefinition({ guild: true })] : []),
   ];
 }
