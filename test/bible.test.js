@@ -74,7 +74,7 @@ test('calendar boundaries respect DST and support catching up or finishing early
   assert.equal(done.completed.length, 365);
   assert.deepEqual(readingMessage(done, 'a').components, []);
 });
-test('schemas, private replies, button dispatch and history pagination', async t => {
+test('schemas, public replies, owner-only button dispatch and history pagination', async t => {
   const { service } = fixture(t);
   assert.deepEqual(bibleDefinition().contexts, [1]);
   assert.ok(definitions(defaults).some(c => c.name === 'bible'));
@@ -88,7 +88,7 @@ test('schemas, private replies, button dispatch and history pagination', async t
     deferReply: async p => { replies.push(p); }, editReply: async p => { replies.push(p); } };
   assert.equal(handler.handles(interaction), true);
   await handler.handle(interaction);
-  assert.equal(replies[0].flags, 64);
+  assert.equal(replies[0].flags, 0);
   assert.equal(replies[1].embeds[0].description, plan[0]);
   const customId = replies[1].components[0].components[1].custom_id;
   const button = { ...interaction, isChatInputCommand: () => false, isButton: () => true,

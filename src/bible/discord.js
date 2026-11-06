@@ -75,7 +75,7 @@ export function createBibleHandler({ config, settings, bible, logger }) {
             footer: { text: action === 'complete' ? `Reading ${before.day}/365 complete` : 'Abandoned · progress unchanged' },
           }], content: record.finished ? 'You completed all 365 readings! 🎉' : '' });
         }
-        await i.deferReply({ flags: MessageFlags.Ephemeral });
+        await i.deferReply({ flags: 0 });
         if (i.options.getSubcommand() === 'today')
           return await i.editReply({ ...safe, ...readingMessage(bible.today(i.user.id), i.user.id) });
         const record = bible.history(i.user.id);

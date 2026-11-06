@@ -40,7 +40,7 @@ Local programs can send outbound notifications through `POST /api/notifications`
 | Text commands | Add/edit/delete responses through the panel, with everyone/moderator/owner access and `{user}` / `{server}` placeholders |
 | Local code | Bot DM only: `/owner-auth` grants five minutes with TOTP; `/customcommand` loads local JavaScript fresh; `/owner-lock` revokes access |
 
-Replies are ephemeral (visible to the invoking user). Mentions are suppressed. Long results are attached as a text file. Ordinary chat is not monitored; no message-content privileged intent is needed.
+Replies are ephemeral (visible to the invoking user), except Bible command replies, which are public in server channels. Mentions are suppressed. Long results are attached as a text file. Ordinary chat is not monitored; no message-content privileged intent is needed.
 
 The panel shows connection state, server details, currently configured commands, registered commands read from Discord, and recent logs. Refresh registered commands to remove individual obsolete registrations by their global/server scope. Sync restores enabled commands. It manages built-in toggles, response commands, moderation allowlists, custom execution timeout, cancellation, and persistent settings. Complex command behavior stays in source modules.
 

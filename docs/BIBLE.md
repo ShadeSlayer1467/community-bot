@@ -1,6 +1,6 @@
 # Bible reading plan
 
-Use `/bible today` in a configured server or a bot DM. Replies are private. The first use starts your personal plan at reading 1; progress follows your Discord user across servers and DMs.
+Use `/bible today` in a configured server or a bot DM. Bible command replies are public channel messages in servers; in bot DMs they stay in that conversation. Only the requesting user can use the message's buttons. The first use starts your personal plan at reading 1; progress follows your Discord user across servers and DMs.
 
 The plan covers all 1,189 chapters of the 66-book Bible in 365 readings of three or four chapters. It reads Matthew through Revelation, then Genesis through Malachi. The embed contains passage references only, with reading number and backlog in the footer.
 
